@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <title>Twitter Verification Response Logger</title>
   <script>
-    window.open("https://amp.pandora.com/verify.php?response=badr");
-
+    function openVerificationPage() {
+      window.open("https://amp.pandora.com/verify.php?response=badr");
+    }
 
     function twitterVerificationResponse(...args) {
       console.log("twitterVerificationResponse called with arguments:", args);
@@ -14,6 +15,7 @@
 </head>
 <body>
   <h1>Check the console for twitterVerificationResponse arguments</h1>
+  <button onclick="openVerificationPage()">Open Verification Page</button>
   <p>Call <code>twitterVerificationResponse()</code> from the browser console with your own arguments to test.</p>
 </body>
 </html>
