@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Test Page</title>
+    </head>
+    <body>
+        <h1>Welcome to the Test Page</h1>
+        <p>This is a simple HTML page for testing purposes.</p>
+        <script>
+            console.log("Test Page Loaded");
+            const channel = new BroadcastChannel('cdd_vault_channel')
+                setTimeout(() => {
+                    // let other pages know that we are on the login page and so should sign out
+                    channel.postMessage('isLoggedIn')
+                })
+        </script>
+    </body>
+</html>

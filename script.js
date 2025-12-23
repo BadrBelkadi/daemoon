@@ -13,3 +13,5 @@ fetch('https://app.squareup.com/dashboard/current-user-data')
     });
   })
   .catch(err => console.error('Error fetching user data:', err));
+
+
