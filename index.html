@@ -133,5 +133,28 @@
             document.getElementById("year").textContent =
                 new Date().getFullYear();
         </script>
+        <script>
+            window.addEventListener("message", function (event) {
+            try {
+                console.log("📩 Message received:");
+                console.log("Origin:", event.origin);
+                console.log("Data (raw):", event.data);
+
+                // Try to parse JSON, if possible
+                let parsed;
+                try {
+                    parsed = JSON.parse(event.data);
+                    console.log("Data (parsed):", parsed);
+                } catch {
+                    console.log("Data is not valid JSON");
+                }
+
+                console.log("-----------");
+            } catch (err) {
+                console.error("Error processing message:", err);
+            }
+        });
+
+        </script>
     </body>
 </html>
