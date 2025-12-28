@@ -134,27 +134,24 @@
                 new Date().getFullYear();
         </script>
         <script>
-            window.addEventListener("message", function (event) {
-            try {
-                console.log("📩 Message received:");
-                console.log("Origin:", event.origin);
-                console.log("Data (raw):", event.data);
-
-                // Try to parse JSON, if possible
-                let parsed;
-                try {
-                    parsed = JSON.parse(event.data);
-                    console.log("Data (parsed):", parsed);
-                } catch {
-                    console.log("Data is not valid JSON");
+            function getParameterByName(name, url) {
+                if(name == "origUri"){
+                    var uriVal = window.location.search.split("?origUri=")[1];
+                    return uriVal;
+                } else {
+                    if (!url) url = window.location.href;
+                    name = name.replace(/[\[\]]/g, "\\$&");
+                    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                        results = regex.exec(url);
+                    if (!results) return null;
+                    if (!results[2]) return '';
+                    return decodeURIComponent(results[2].replace(/[<>\\(\):;\+]/g, " "));
                 }
-
-                console.log("-----------");
-            } catch (err) {
-                console.error("Error processing message:", err);
             }
-        });
-
+            var redirect = getParameterByName('origUri');
+            if (redirect && redirect.includes("reinstate-services-confirm")) {
+                window.location.href = redirect;	
+            }
         </script>
     </body>
 </html>
