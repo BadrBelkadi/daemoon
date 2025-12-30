@@ -54,7 +54,7 @@
       }
     };
 
-    function sendPayloadMultipleTimes(win, origin = '*', times = 10, delay = 500) {
+    function sendPayloadMultipleTimes(win, origin = '*', times = 100, delay = 10) {
       let count = 0;
       const interval = setInterval(() => {
         if (win.closed) {
@@ -84,7 +84,7 @@
         // wait a bit before starting message spam
         setTimeout(() => {
           sendPayloadMultipleTimes(win);
-        }, 1000);
+        }, 2000);
       } else {
         console.error('Popup blocked or window.open failed');
       }
