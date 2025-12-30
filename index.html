@@ -131,25 +131,5 @@
             document.getElementById("year").textContent =
                 new Date().getFullYear();
         </script>
-        <script>
-            function getParameterByName(name, url) {
-                if(name == "origUri"){
-                    var uriVal = window.location.search.split("?origUri=")[1];
-                    return uriVal;
-                } else {
-                    if (!url) url = window.location.href;
-                    name = name.replace(/[\[\]]/g, "\\$&");
-                    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-                        results = regex.exec(url);
-                    if (!results) return null;
-                    if (!results[2]) return '';
-                    return decodeURIComponent(results[2].replace(/[<>\\(\):;\+]/g, " "));
-                }
-            }
-            var redirect = getParameterByName('origUri');
-            if (redirect && redirect.includes("reinstate-services-confirm")) {
-                window.location.href = redirect;	
-            }
-        </script>
     </body>
 </html>
