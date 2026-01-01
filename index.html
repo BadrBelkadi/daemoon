@@ -97,7 +97,7 @@
         })
         .catch(console.error);
     </script> -->
-    <script>
+    <!-- <script>
         fetch("https://api-proxy.eur.halara.com/mall-rest/api/v1/device/startup", {
         method: "GET",
         credentials: "include" // must be set to send cookies
@@ -111,6 +111,17 @@
         console.error("❌ Error:", err);
         });
 
+    </script> -->
+    <script>
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            console.log(xhr.responseText)
+        }
+        }
+        xhr.open("GET", "https://api-proxy.eur.halara.com/mall-rest/api/v1/device/startup", true)
+        xhr.withCredentials = true
+        xhr.send(null)
     </script>
 
     <!-- Sets the current year -->
