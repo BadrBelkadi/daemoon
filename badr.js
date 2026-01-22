@@ -1,1 +1,1 @@
-alert(window.opener.location);
+alert(window.opener);
