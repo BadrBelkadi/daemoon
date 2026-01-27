@@ -2,4 +2,4 @@ document.cookie = "dzr_uniq_id=dzr_uniq_id_frbf5046debd4d4561fddaed1581ba5331af4
 
 setTimeout(function() {
     document.location.href= "https://www.deezer.com/en/offers";
-}, 2000);   
+}, 1000);   
