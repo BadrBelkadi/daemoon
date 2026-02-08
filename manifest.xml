@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:type="TaskPaneApp">
+  <Id>a1b2c3d4-e5f6-7890-abcd-ef1234567890</Id>
+  <Version>1.0.0</Version>
+  <ProviderName>Test</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Test Add-in"/>
+  <Description DefaultValue="Test Add-in Description"/>
+  <IconUrl DefaultValue="https://example.com/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://example.com/icon-64.png"/>
+  
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://app.biorender.com/office/sso_portal?portalUrl=https://evil.com"/>
+  </DefaultSettings>
+  
+  <Permissions>ReadWriteDocument</Permissions>
+  
+  <AppDomains>
+    <AppDomain>https://app.biorender.com</AppDomain>
+    <AppDomain>https://evil.com</AppDomain>
+  </AppDomains>
+</OfficeApp>
