@@ -1,0 +1,21 @@
+[     236ms] [WARNING]  [33m[1m⚠[22m[39m Runtime config is deprecated and will be removed in Next.js 16. Please remove the usage of "next/config" from your project. @ https://cdn.wetransfer.com/_next/static/chunks/pages/_app-77d4b8737f59f6e0.js:0
+[    1397ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1904796869803472. @ https://connect.facebook.net/en_US/fbevents.js:173
+[    4850ms] [WARNING] The resource https://apps.rokt.com/icons/rokt-icons.woff was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://apps.rokt.com/wsdk/plugins/dcui/index.html:0
+[    7600ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://wetransfer.com/api/v4/users:0
+[   30730ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://tagging.wetransfer.com/gtm.js:0
+[   30794ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://tagging.wetransfer.com/gtag/js:0
+[   30859ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://tagging.wetransfer.com/g/collect:0
+[  123472ms] [WARNING] %c [♿️ WeTransfer a11y warning ♿️] 
+ Please add a descriptive alternative text (altText) for this image (https://backgrounds.wetransfer.net/creator/wetransfer/2505/static-arrow/1_WtAZKf/2/../image.c9511797fe6fcc2ae28d.webp) to the Background component. If this image is purely decorative add an empty string. 
+ More info: https://github.com/WeTransfer/wallpaper-ui/blob/main/docs/components/Background.md#altText font-weight: 600; @ https://backgrounds.wetransfer.net/creator/wetransfer/2505/static-arrow/1_WtAZKf/2/bundle.f86ddee8ed9b944bf404.js:0
+[  335123ms] [WARNING] %c [♿️ WeTransfer a11y warning ♿️] 
+ Please add a descriptive alternative text (altText) for this image (https://backgrounds.wetransfer.net/creator/wetransfer/2505/static-fun-text/1_8BQNhY/1/../image.5e83cc944ed01ed39331.webp) to the Background component. If this image is purely decorative add an empty string. 
+ More info: https://github.com/WeTransfer/wallpaper-ui/blob/main/docs/components/Background.md#altText font-weight: 600; @ https://backgrounds.wetransfer.net/creator/wetransfer/2505/static-fun-text/1_8BQNhY/1/bundle.c8983797a995670c8d05.js:0
+[  362068ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://wetransfer.com/api/v4/me:0
+[  430121ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://wetransfer.com/api/v4/teams:0
+[  430199ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://wetransfer.com/api/v4/contacts:0
+[  451952ms] [WARNING]  [33m[1m⚠[22m[39m Runtime config is deprecated and will be removed in Next.js 16. Please remove the usage of "next/config" from your project. @ https://cdn.wetransfer.com/_next/static/chunks/pages/_app-77d4b8737f59f6e0.js:0
+[  453050ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1904796869803472. @ https://connect.facebook.net/en_US/fbevents.js:173
+[  454198ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://ekstrom.wetransfer.net/v1/customizations/transfers/e7ebc14ecb6583316d1d20f8aea43dfd20260122140712:0
+[  454211ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://ekstrom.wetransfer.net/v1/customizations/transfers/0863859745711e2cf53050ef0bce638520260122182115:0
+[  456269ms] [WARNING] The resource https://apps.rokt.com/icons/rokt-icons.woff was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://apps.rokt.com/wsdk/plugins/dcui/index.html:0

