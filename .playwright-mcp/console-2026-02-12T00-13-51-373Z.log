@@ -1,0 +1,1 @@
+[    4779ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://www.care.com/api/graphql?query=%7B__typename%7D:0

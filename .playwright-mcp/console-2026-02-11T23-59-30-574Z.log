@@ -1,0 +1,43 @@
+[   12801ms] [ERROR] Access to fetch at 'https://login.care.com/' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   12801ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/:0
+[   12802ms] [ERROR] Access to fetch at 'https://login.care.com/' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   12802ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/:0
+[   13017ms] [ERROR] Access to fetch at 'https://login.care.com/.well-known/openid-configuration' from origin 'https://tagging.care.com' has been blocked by CORS policy: The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   13017ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/.well-known/openid-configuration:0
+[   13267ms] [ERROR] Access to fetch at 'https://login.care.com/oauth/token' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   13268ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/oauth/token:0
+[   13310ms] [ERROR] Access to fetch at 'https://login.care.com/oauth/token' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   13310ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/oauth/token:0
+[   13503ms] [ERROR] Access to fetch at 'https://login.care.com/userinfo' from origin 'https://tagging.care.com' has been blocked by CORS policy: The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   13503ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/userinfo:0
+[   13668ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://login.care.com/userinfo:0
+[   13852ms] [ERROR] Access to fetch at 'https://login.care.com/authorize' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   13852ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/authorize:0
+[   14020ms] [ERROR] Access to fetch at 'https://login.care.com/authorize' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   14020ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/authorize:0
+[   14223ms] [ERROR] Access to fetch at 'https://login.care.com/v2/logout' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   14223ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/v2/logout:0
+[   14395ms] [ERROR] Access to fetch at 'https://login.care.com/v2/logout' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   14395ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/v2/logout:0
+[   14589ms] [ERROR] Access to fetch at 'https://login.care.com/oauth/revoke' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   14589ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/oauth/revoke:0
+[   14620ms] [ERROR] Access to fetch at 'https://login.care.com/oauth/revoke' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[   14620ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://login.care.com/oauth/revoke:0
+[   46729ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.care.com/:0
+[   47004ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://app.care.com/:0
+[   47196ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://m.care.com/:0
+[   47444ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://member.care.com/:0
+[   47828ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://secure.care.com/:0
+[   48087ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://accounts.care.com/:0
+[   48631ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://sso.care.com/:0
+[   49670ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://auth.care.com/:0
+[  115186ms] [ERROR] Access to fetch at 'https://www.care.com/api/config' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[  115186ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.care.com/api/config:0
+[  115351ms] [ERROR] Access to fetch at 'https://www.care.com/api/v1/session' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[  115351ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.care.com/api/v1/session:0
+[  115514ms] [ERROR] Access to fetch at 'https://www.care.com/api/auth/session' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[  115514ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.care.com/api/auth/session:0
+[  115871ms] [ERROR] Access to fetch at 'https://www.care.com/enroll-service/member/getLoggedInUser' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[  115871ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.care.com/enroll-service/member/getLoggedInUser:0
+[  116045ms] [ERROR] Access to fetch at 'https://www.care.com/api/member/profile' from origin 'https://tagging.care.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://tagging.care.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1:0
+[  116045ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.care.com/api/member/profile:0

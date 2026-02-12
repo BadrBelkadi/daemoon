@@ -1,0 +1,4 @@
+[     751ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://www.care.com/api/:0
+[     910ms] ReferenceError: require is not defined
+    at https://www.care.com/api/:239:11
+    at https://www.care.com/api/:262:11
