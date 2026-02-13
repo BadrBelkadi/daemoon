@@ -9,7 +9,7 @@
     + '&redirect_uri=' + encodeURIComponent('https://wetransfer.com/account/silent-callback')
     + '&code_challenge=' + encodeURIComponent(c)
     + '&code_challenge_method=S256'
-    + '&state=poc';
+    + '&state=' + Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
 
   const w = window.open(authUrl);
 
