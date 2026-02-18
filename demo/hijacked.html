@@ -5,6 +5,7 @@ FRAME HIJACKED
 <script>
     // top.location = "https://evil.com"
     // parent.location = "https://evil.com"
+    window.parent.location.reload();
     setTimeout(function() {
         alert("This page has been hijacked!");
         //
