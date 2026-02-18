@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Test</h1>
+    <iframe name="myframe" src="https://frontsite-nextjs.wetransfer.net/blog" width="1000" height="400"></iframe>
+    <button onclick="openNewTab()">Open New Tab</button>
+    <script>
+        function openNewTab() {
+            var x = window.open("https://frontsite-nextjs.wetransfer.net/blog", "myframe");
+            setTimeout(function() {
+                x.frames[0].location.href = "https://daemoon.me";
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
