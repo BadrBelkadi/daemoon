@@ -1,0 +1,1 @@
+document.body.innerHTML = '<div style="background:red;color:white;font-size:48px;font-weight:bold;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;">FRAME HIJACKED</div>';
