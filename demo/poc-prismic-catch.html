@@ -14,7 +14,7 @@
 //   setup_port → port established → preview_state (auth:true) → toolbar renders
 //   → prediction_docs request arrives → we respond with javascript: editorUrl
 //   → toolbar.js:7461 renders <a href="javascript:..."> → XSS on click
-
+console.log("Catch page loaded! Waiting for setup_port...");
 const SETUP_PORT = 'setup_port';
 const READY = 'ready';
 
