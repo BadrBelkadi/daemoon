@@ -22,16 +22,6 @@
 </head>
 <body>
 
-<h1>Prismic Toolbar XSS via Iframe Hijack</h1>
-
-<p>
-  <strong>Vulnerability:</strong> Prismic toolbar iframe communication uses
-  <code>postMessage('setup_port', '*', [port])</code> — wildcard target origin.<br>
-  <strong>Impact:</strong> Attacker navigates the Prismic iframe to a controlled page, intercepts the
-  MessagePort, and injects malicious <code>editorUrl</code> into prediction documents.
-  toolbar.js renders <code>&lt;a href={editorUrl}&gt;</code> with no protocol validation → XSS on click.
-</p>
-
 <label for="target">Target URL (wetransfer.com/blog has Prismic toolbar, no framing restrictions):</label>
 <input id="target" type="text" value="https://wetransfer.com/blog">
 
