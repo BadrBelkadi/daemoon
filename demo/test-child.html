@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+// Listen for parent's instruction to reply
+window.addEventListener('message', function(e) {
+    if (e.data === 'please_reply') {
+        parent.postMessage('test2_child_reply', '*');
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head><title>Exact Scenario Test</title></head>
+<body>
+<h3>Test: Exact scenario from the claim</h3>
+<p>Victim page has a trusted child iframe. Validates messages using e.source == window.frames[0].</p>
+<p>Attacker: opens popup, sends message from popup, closes popup immediately.</p>
+<pre id="log"></pre>
+
+<!-- This is the "trusted" child iframe that the victim expects messages from -->
+<iframe id="trusted" src="test-child.html"></iframe>
+
+<script>
+function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+    console.log(msg);
+}
+
+// Victim's message handler - validates source is the trusted iframe
+window.addEventListener('message', function(e) {
+    log('=== Message Received ===');
+    log('e.data: ' + e.data);
+
+    // Safely check e.source
+    var sourceIsNull = (e.source === null);
+    var sourceIsNullish = (e.source == null);
+    log('e.source === null: ' + sourceIsNull);
+    log('e.source == null: ' + sourceIsNullish);
+
+    // Check the trusted iframe
+    var trustedFrame = window.frames[0];
+    log('window.frames[0]: ' + trustedFrame);
+    log('window.frames.length: ' + window.frames.length);
+
+    // THE VULNERABLE CHECK
+    var looseCheck = (e.source == window.frames[0]);
+    var strictCheck = (e.source === window.frames[0]);
+    log('e.source == window.frames[0] (loose): ' + looseCheck);
+    log('e.source === window.frames[0] (strict): ' + strictCheck);
+
+    if (looseCheck) {
+        log('*** BYPASS SUCCESSFUL - loose equality passed! ***');
+    } else {
+        log('Bypass failed - loose equality returned false');
+    }
+
+    // Try to probe e.source safely
+    try {
+        log('e.source.closed: ' + e.source.closed);
+    } catch(err) {
+        log('e.source.closed error: ' + err.message);
+    }
+
+    try {
+        log('typeof e.source: ' + typeof e.source);
+    } catch(err) {
+        log('typeof e.source error: ' + err.message);
+    }
+    log('---');
+});
+</script>
+
+<h4>Test A: Attack from window.open popup (close after send)</h4>
+<button onclick="testPopup()">Run Popup Attack</button>
+
+<h4>Test B: Remove trusted iframe, then send from external</h4>
+<button onclick="testRemoveTrusted()">Run Remove-Trusted Attack</button>
+
+<h4>Test C: Direct null/undefined comparison baseline</h4>
+<button onclick="testBaseline()">Run Baseline</button>
+
+<script>
+// Test A: Open a popup, send message from it, close it
+function testPopup() {
+    log('\n========== TEST A: Popup attack ==========');
+    var popup = window.open('', '', 'width=100,height=100');
+    popup.document.write('<script>opener.postMessage("popup_attack", "*"); window.close();<\/script>');
+}
+
+// Test B: Remove the trusted iframe first, THEN send a message
+// If frames[0] becomes undefined, and if we can make e.source null, then null == undefined
+function testRemoveTrusted() {
+    log('\n========== TEST B: Remove trusted iframe + external message ==========');
+
+    // Step 1: Remove the trusted iframe
+    var trusted = document.getElementById('trusted');
+    if (trusted) {
+        trusted.remove();
+        log('[Trusted iframe removed - window.frames[0] is now: ' + window.frames[0] + ']');
+        log('[window.frames.length is now: ' + window.frames.length + ']');
+    } else {
+        log('[Trusted iframe already removed]');
+    }
+
+    // Step 2: Create an attack iframe that sends a message and gets destroyed
+    var attack = document.createElement('iframe');
+    attack.id = 'attack-frame';
+    attack.src = 'test-child.html';
+    document.body.appendChild(attack);
+    attack.onload = function() {
+        // Send message from attack iframe, then destroy it
+        attack.contentWindow.eval('parent.postMessage("attack_after_trusted_removed", "*")');
+        attack.remove();
+        log('[Attack iframe also removed immediately after sending]');
+    };
+}
+
+// Test C: Just verify JS basics
+function testBaseline() {
+    log('\n========== TEST C: JS Baseline ==========');
+    log('null == undefined: ' + (null == undefined));
+    log('null === undefined: ' + (null === undefined));
+    log('null == null: ' + (null == null));
+    log('null == false: ' + (null == false));
+    log('null == 0: ' + (null == 0));
+    log('null == "": ' + (null == ""));
+
+    // Simulate what would happen if e.source WERE null
+    var fakeSource = null;
+    var fakeFrames0 = undefined;
+    log('(simulated) null-source == undefined-frames[0]: ' + (fakeSource == fakeFrames0));
+
+    // But what about a closed window?
+    log('');
+    log('Key question: is a closed/dead Window == undefined?');
+    var w = window.open('', '', 'width=1,height=1');
+    if (w) {
+        w.close();
+        log('Closed popup == undefined: ' + (w == undefined));
+        log('Closed popup == null: ' + (w == null));
+        log('Closed popup === null: ' + (w === null));
+        log('typeof closed popup: ' + typeof w);
+        log('Closed popup: ' + w);
+    } else {
+        log('Popup was blocked');
+    }
+}
+</script>
+</body>
+</html>

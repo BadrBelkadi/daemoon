@@ -1,0 +1,19 @@
+<!-- victim.html (the target page) -->
+<!DOCTYPE html>
+<html>
+<body>
+<h3>Victim Parent Page</h3>
+
+<script>
+console.log("window.frames[0]:", window.frames[0]);
+
+window.addEventListener('message', function(e) {
+    console.log("e.source:", e.source);
+    if (e.source == window.frames[0]) {
+        alert(1);
+    }
+
+});
+</script>
+</body>
+</html>

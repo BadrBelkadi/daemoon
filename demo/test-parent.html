@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head><title>postMessage e.source null test</title></head>
+<body>
+<h3>Test: Does e.source become null when source iframe is destroyed?</h3>
+<pre id="log"></pre>
+
+<script>
+function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+    console.log(msg);
+}
+
+window.addEventListener('message', function(e) {
+    log('=== Message Received ===');
+    log('e.data: ' + e.data);
+    log('e.source: ' + e.source);
+    log('e.source === null: ' + (e.source === null));
+    log('e.source == null: ' + (e.source == null));
+    log('typeof e.source: ' + typeof e.source);
+    log('e.origin: ' + e.origin);
+    log('');
+    log('window.frames.length: ' + window.frames.length);
+    log('window.frames[0]: ' + window.frames[0]);
+    log('typeof window.frames[0]: ' + typeof window.frames[0]);
+    log('');
+    log('--- The bypass check ---');
+    log('e.source == window.frames[0]: ' + (e.source == window.frames[0]));
+    log('e.source === window.frames[0]: ' + (e.source === window.frames[0]));
+    log('null == undefined: ' + (null == undefined));
+    log('null === undefined: ' + (null === undefined));
+
+    // Extra: check if e.source is a dead/detached window
+    try {
+        log('');
+        log('--- Probing e.source (is it alive?) ---');
+        log('e.source.closed: ' + e.source.closed);
+        log('e.source.location: ' + e.source.location);
+    } catch(err) {
+        log('Error accessing e.source properties: ' + err.message);
+    }
+});
+</script>
+
+<h4>Test 1: eval + immediate remove (synchronous)</h4>
+<button id="btn1" onclick="test1()">Run Test 1</button>
+
+<h4>Test 2: postMessage from child, parent removes child</h4>
+<button id="btn2" onclick="test2()">Run Test 2</button>
+
+<h4>Test 3: child self-destructs after sending</h4>
+<button id="btn3" onclick="test3()">Run Test 3</button>
+
+<h4>Test 4: Cross-origin iframe (data: URI)</h4>
+<button id="btn4" onclick="test4()">Run Test 4</button>
+
+<script>
+// Test 1: Same as original demo - eval inside iframe, then remove
+function test1() {
+    log('\n========== TEST 1: eval + remove ==========');
+    var iframe = document.createElement('iframe');
+    iframe.src = 'test-child.html';
+    iframe.id = 'test1';
+    document.body.appendChild(iframe);
+    iframe.onload = function() {
+        // Send message FROM iframe context TO parent, then destroy iframe
+        iframe.contentWindow.eval('parent.postMessage("test1_from_child", "*")');
+        iframe.remove();
+        log('[iframe removed synchronously after eval]');
+    };
+}
+
+// Test 2: Tell child to send message, use setTimeout(0) to remove
+function test2() {
+    log('\n========== TEST 2: child sends, parent removes ==========');
+    var iframe = document.createElement('iframe');
+    iframe.src = 'test-child.html';
+    iframe.id = 'test2';
+    document.body.appendChild(iframe);
+    iframe.onload = function() {
+        // Tell child to send message back
+        iframe.contentWindow.postMessage('please_reply', '*');
+        // Remove after a tiny delay to ensure child has sent its message
+        setTimeout(function() {
+            iframe.remove();
+            log('[iframe removed via setTimeout after child replied]');
+        }, 50);
+    };
+}
+
+// Test 3: Child sends message and tells parent to remove it
+function test3() {
+    log('\n========== TEST 3: rapid fire + remove ==========');
+    var iframe = document.createElement('iframe');
+    iframe.src = 'test-child.html';
+    iframe.id = 'test3';
+    document.body.appendChild(iframe);
+    iframe.onload = function() {
+        // Use eval to send message AND trigger removal in one go
+        iframe.contentWindow.eval(
+            'parent.postMessage("test3_payload", "*");'
+        );
+        // Synchronous removal - the message is already queued
+        document.getElementById('test3').remove();
+        log('[iframe removed right after eval - message in queue]');
+    };
+}
+
+// Test 4: Cross-origin iframe using data: URI
+function test4() {
+    log('\n========== TEST 4: cross-origin (data: URI) ==========');
+    var iframe = document.createElement('iframe');
+    iframe.src = 'data:text/html,<script>parent.postMessage("test4_cross_origin","*")<\/script>';
+    iframe.id = 'test4';
+    document.body.appendChild(iframe);
+    // Remove after a brief moment
+    setTimeout(function() {
+        var f = document.getElementById('test4');
+        if (f) {
+            f.remove();
+            log('[cross-origin iframe removed]');
+        }
+    }, 200);
+}
+</script>
+</body>
+</html>

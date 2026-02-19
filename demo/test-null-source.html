@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h3>Null Source Diagnostic</h3>
+<pre id="log"></pre>
+
+<span id="ifr"><iframe></iframe></span>
+
+<script>
+function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+    console.log(msg);
+}
+
+// Listen for messages
+window.addEventListener('message', function(e) {
+    log('--- Message received ---');
+    log('e.source: ' + e.source);
+    log('e.source === null: ' + (e.source === null));
+    log('e.source === undefined: ' + (e.source === undefined));
+    log('e.source == null: ' + (e.source == null));
+    log('e.origin: ' + e.origin);
+    log('e.data: ' + e.data);
+    log('window.frames[0]: ' + window.frames[0]);
+    log('e.source == window.frames[0]: ' + (e.source == window.frames[0]));
+
+    if (e.source == null) {
+        log('SUCCESS: e.source is null/undefined - trick works!');
+    } else {
+        log('FAIL: e.source is NOT null - trick does not work');
+    }
+});
+
+log('window.frames[0] before: ' + window.frames[0]);
+log('window.frames.length before: ' + window.frames.length);
+
+// Send message from iframe, then destroy it
+frames[0].eval("parent.postMessage('test-from-iframe','*')");
+
+// Destroy iframe immediately
+ifr.innerHTML = 'destroyed';
+
+log('window.frames[0] after destroy: ' + window.frames[0]);
+log('window.frames.length after: ' + window.frames.length);
+log('Waiting for message...');
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h3>Null Source Diagnostic v2 - Async destroy</h3>
+<pre id="log"></pre>
+
+<span id="ifr"><iframe></iframe></span>
+
+<script>
+function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+    console.log(msg);
+}
+
+window.addEventListener('message', function(e) {
+    log('--- Message received ---');
+    log('e.source: ' + e.source);
+    log('e.source === null: ' + (e.source === null));
+    log('typeof e.source: ' + typeof e.source);
+    log('e.origin: ' + e.origin);
+});
+
+// Test 1: Send and destroy synchronously (same as before)
+log('=== Test 1: Sync destroy ===');
+frames[0].eval("parent.postMessage('sync-test','*')");
+ifr.innerHTML = '<iframe></iframe>';
+
+// Test 2: Use setTimeout to destroy after message is sent
+setTimeout(function() {
+    log('=== Test 2: Destroy with setTimeout 0 ===');
+    frames[0].eval("parent.postMessage('timeout-0','*')");
+    setTimeout(function() { ifr.innerHTML = '<iframe></iframe>'; }, 0);
+}, 500);
+
+// Test 3: Use queueMicrotask
+setTimeout(function() {
+    log('=== Test 3: Destroy with queueMicrotask ===');
+    frames[0].eval("parent.postMessage('microtask','*')");
+    queueMicrotask(function() { ifr.innerHTML = '<iframe></iframe>'; });
+}, 1000);
+
+// Test 4: requestAnimationFrame
+setTimeout(function() {
+    log('=== Test 4: Destroy with requestAnimationFrame ===');
+    frames[0].eval("parent.postMessage('raf','*')");
+    requestAnimationFrame(function() { ifr.innerHTML = 'gone'; });
+}, 1500);
+</script>
+</body>
+</html>
