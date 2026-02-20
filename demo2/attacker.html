@@ -42,7 +42,7 @@
 
         // live demo
         function openNewTab() {
-            let w = window.open("https://www.files.com/", "_blank", "width=500,height=500");
+            let w = window.open("https://www.files.com/", "_blank");
             setTimeout(() => {
                 // Navigate inner iframe
                 w.frames[1].location.href = "https://daemoon.me/alert.html";
