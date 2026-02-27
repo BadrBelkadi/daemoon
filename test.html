@@ -11,6 +11,8 @@
     <script>
         window.addEventListener("message", (e)=>{
         console.log("message:", e)
+        console.log("window.origin:", window.origin)
+        console.log("e.origin:", e.origin)
         console.log("window.origin === e.origin", window.origin === e.origin)
         })
     </script>
