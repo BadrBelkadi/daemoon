@@ -1,0 +1,291 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Interested in going full-time bug bounty? Check out our blueprint!" [ref=e4] [cursor=pointer]:
+      - /url: https://www.criticalthinkingpodcast.io/banner-blueprint
+    - generic [ref=e8]:
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - link "Critical Thinking - Bug Bounty Podcast" [ref=e12] [cursor=pointer]:
+            - /url: /
+            - img "Critical Thinking - Bug Bounty Podcast" [ref=e14]
+          - list [ref=e16]:
+            - listitem [ref=e17]:
+              - link "Home" [ref=e18] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e19]:
+              - link "Episodes" [ref=e20] [cursor=pointer]:
+                - /url: /episodes/
+            - listitem [ref=e21]:
+              - link "Hacker Notes" [ref=e22] [cursor=pointer]:
+                - /url: https://blog.criticalthinkingpodcast.io/
+            - listitem [ref=e23]:
+              - link "Discord" [ref=e24] [cursor=pointer]:
+                - /url: /discord/
+            - listitem [ref=e25]:
+              - link "Swag" [ref=e26] [cursor=pointer]:
+                - /url: https://ctbbpodcast.myshopify.com
+            - listitem [ref=e27]:
+              - link "Lab" [ref=e28] [cursor=pointer]:
+                - /url: https://www.criticalthinkingpodcast.io/p/critical-research-lab/
+            - listitem [ref=e29]:
+              - link "Follow" [ref=e30] [cursor=pointer]:
+                - /url: /follow/
+            - listitem [ref=e31]:
+              - link "Reviews" [ref=e32] [cursor=pointer]:
+                - /url: /reviews/
+            - listitem [ref=e33]:
+              - link "About" [ref=e34] [cursor=pointer]:
+                - /url: /about/
+            - listitem [ref=e35]:
+              - link "Click to search entire website" [ref=e36] [cursor=pointer]:
+                - /url: "#"
+          - link "Contact" [ref=e39] [cursor=pointer]:
+            - /url: /contact/
+      - generic [ref=e43]:
+        - generic [ref=e45]:
+          - generic [ref=e46]: Dec. 14, 2023
+          - 'heading "Episode 49: Getting Live Hacking Event Invites & Bug Bounty Collab with Nagli" [level=1] [ref=e47]'
+          - generic [ref=e48]:
+            - generic [ref=e49] [cursor=pointer]:
+              - img "twitter-white sharing button" [ref=e50]
+              - generic [ref=e51]: Post
+            - generic [ref=e52] [cursor=pointer]:
+              - img "facebook-white sharing button" [ref=e53]
+              - generic [ref=e54]: Share
+            - generic [ref=e55] [cursor=pointer]:
+              - img "sharethis-white sharing button" [ref=e56]
+              - generic [ref=e57]: Share
+          - iframe [ref=e60]:
+            - generic "YouTube Video Player" [ref=f28e3]:
+              - generic [ref=f28e5]:
+                - link "Photo image of Critical Thinking - Bug Bounty Podcast" [ref=f28e8] [cursor=pointer]:
+                  - /url: https://www.youtube.com/channel/UC6zbKG1pqq2do-_oa9QFliA?embeds_referring_euri=https%3A%2F%2Fwww.criticalthinkingpodcast.io%2F
+                - link "Getting Live Hacking Event Invites & Bug Bounty Collab with Nagli (Ep. 49)" [ref=f28e11] [cursor=pointer]:
+                  - /url: https://www.youtube.com/watch?v=TXZIPXKyNJc
+                - button "Copy link" [ref=f28e13] [cursor=pointer]:
+                  - generic [ref=f28e14]:
+                    - img
+                  - generic [ref=f28e15]: Copy link
+              - button "Play" [ref=f28e18] [cursor=pointer]:
+                - img
+              - link "Watch on YouTube" [ref=f28e19] [cursor=pointer]:
+                - /url: https://www.youtube.com/watch?v=TXZIPXKyNJc&embeds_referring_euri=https%3A%2F%2Fwww.criticalthinkingpodcast.io%2F
+                - generic [ref=f28e20]: Watch on
+                - generic [ref=f28e21]:
+                  - img
+          - generic [ref=e63]:
+            - 'img "Episode 49: Getting Live Hacking Event Invites & Bug Bounty Collab with Nagli" [ref=e64]'
+            - generic [ref=e65]:
+              - generic [ref=e66]: "Episode 49: Getting Live Hacking Event Invites & Bug Bounty Collab with Nagli"
+              - generic [ref=e69]:
+                - 'button "Play, Episode 49: Getting Live Hacking Event Invites & Bug Bounty Collab with Nagli" [ref=e70] [cursor=pointer]':
+                  - img
+                  - generic: Play
+                - generic [ref=e72]:
+                  - slider "Seek" [ref=e73]: "0"
+                  - progressbar [ref=e74]: "% buffered"
+                  - generic: 00:00
+                - timer "Current time" [ref=e75]: 00:00
+                - timer "Duration" [ref=e76]: ⁄00:00
+                - button "Settings" [ref=e78] [cursor=pointer]:
+                  - img
+                  - generic: Settings
+          - generic [ref=e81]:
+            - link "Apple Podcasts podcast player badge" [ref=e83] [cursor=pointer]:
+              - /url: https://podcasts.apple.com/us/podcast/id1663945029?mt=2&ls=1
+              - img "Apple Podcasts podcast player badge" [ref=e84]
+            - link "Spotify podcast player badge" [ref=e86] [cursor=pointer]:
+              - /url: https://open.spotify.com/show/4GiJnv8f4a4ZR6Jc6TQJ3k
+              - img "Spotify podcast player badge" [ref=e87]
+            - link "Castro podcast player badge" [ref=e89] [cursor=pointer]:
+              - /url: https://castro.fm/itunes/1663945029
+              - img "Castro podcast player badge" [ref=e90]
+            - link "RSS Feed podcast player badge" [ref=e92] [cursor=pointer]:
+              - /url: https://media.rss.com/ctbbpodcast/feed.xml
+              - img "RSS Feed podcast player badge" [ref=e93]
+            - link "YouTube podcast player badge" [ref=e95] [cursor=pointer]:
+              - /url: https://www.youtube.com/watch?v=TXZIPXKyNJc
+              - img "YouTube podcast player badge" [ref=e96]
+          - link "Season 1" [ref=e98] [cursor=pointer]:
+            - /url: /episodes/season/1/
+          - tabpanel [ref=e99]:
+            - tablist [ref=e100]:
+              - tab "Show Notes" [ref=e101] [cursor=pointer]
+              - tab "Transcript" [ref=e102] [cursor=pointer]
+            - tabpanel [ref=e104]:
+              - generic [ref=e105]:
+                - paragraph [ref=e106]:
+                  - text: "Episode 49: In this episode of Critical Thinking - Bug Bounty Podcast, Justin Gardner is once again joined by Nagli to discuss some of their recent hacking discoveries. They talk about finding and exploiting a backup file in an"
+                  - link "ASP.NET" [ref=e107] [cursor=pointer]:
+                    - /url: http://ASP.NET
+                  - text: app, discovering vulnerabilities through Swagger files, and debating the vulnerability of a specific ‘undisclosed’ domain. Then they reflect on 2023’s Live Hacking Event circuit, and preview what’s to come in 2024’s.
+                - paragraph [ref=e108]:
+                  - strong [ref=e109]: This episode sponsored by Wordfence!
+                  - text: Wordfence recently launched a game-changer of a bug bounty program with ALL WordPress plugins over 50k installs are in-scope. They are currently paying 6.25x their normal bounty amounts, and have agreed to give CT listeners a 10% bonus on top of that! If you wanna pop some crits and see those bounties roll in, head over to
+                  - link "https://ctbb.show/wf" [ref=e110] [cursor=pointer]:
+                    - /url: https://ctbb.show/wf
+                  - text: for more info and keep an eye on the CTBB Discord for inspiration/collabs.
+                - paragraph [ref=e111]:
+                  - text: "Follow us on twitter at:"
+                  - link "@ctbbpodcast" [ref=e112] [cursor=pointer]:
+                    - /url: https://twitter.com/ctbbpodcast
+                - paragraph [ref=e113]:
+                  - text: "We're new to this podcasting thing, so feel free to send us any feedback here:"
+                  - link "info@criticalthinkingpodcast.io" [ref=e114] [cursor=pointer]:
+                    - /url: mailto:info@criticalthinkingpodcast.io
+                - paragraph [ref=e115]:
+                  - text: Shoutout to
+                  - link "YTCracker" [ref=e116] [cursor=pointer]:
+                    - /url: https://twitter.com/realytcracker
+                  - text: for the awesome intro music!
+                - paragraph [ref=e117]: "------ Links ------"
+                - paragraph [ref=e118]:
+                  - text: Follow your hosts
+                  - link "Rhynorater" [ref=e119] [cursor=pointer]:
+                    - /url: https://twitter.com/rhynorater
+                  - text: "&"
+                  - link "Teknogeek" [ref=e120] [cursor=pointer]:
+                    - /url: https://twitter.com/0xteknogeek
+                  - text: "on twitter:"
+                - paragraph [ref=e121]: "------ Ways to Support CTBBPodcast ------"
+                - paragraph [ref=e122]:
+                  - text: Sign up for
+                  - link "Caido" [ref=e123] [cursor=pointer]:
+                    - /url: https://caido.io/
+                  - text: using the referral code CTBBPODCAST for a 10% discount.
+                - paragraph [ref=e124]:
+                  - text: Hop on the CTBB Discord at
+                  - link "https://ctbb.show/discord" [ref=e125] [cursor=pointer]:
+                    - /url: https://ctbb.show/discord
+                  - text: "!"
+                - paragraph [ref=e126]: We also do Discord subs at $25, $10, $5 - premium subscribers get access to private masterclasses, exploits, tools, scripts, un-redacted bug reports, etc.
+                - paragraph [ref=e127]:
+                  - link "Today’s Guest" [ref=e128] [cursor=pointer]:
+                    - /url: https://twitter.com/naglinagli
+                - paragraph [ref=e129]:
+                  - strong [ref=e130]: "Episode Resources:"
+                - paragraph [ref=e131]:
+                  - link "Shockwave" [ref=e132] [cursor=pointer]:
+                    - /url: https://media.rss.com/ctbbpodcast/href
+                - paragraph [ref=e133]:
+                  - link "Why So Serial" [ref=e134] [cursor=pointer]:
+                    - /url: https://github.com/frohoff/ysoserial
+                - paragraph [ref=e135]:
+                  - link "New LHE Standards Dropped" [ref=e136] [cursor=pointer]:
+                    - /url: https://www.hackerone.com/lhe/2024-lhe-invitations
+                - paragraph [ref=e137]: "Timestamps:"
+                - paragraph [ref=e138]: (00:00:00) Introduction
+                - paragraph [ref=e139]: (00:02:37) wwwroot .zip Hack Recap
+                - paragraph [ref=e140]: (00:13:44) Swagger File Hack Recap
+                - paragraph [ref=e141]: (00:18:27) Undisclosed URL Hack Recap
+                - paragraph [ref=e142]: (00:24:29) 2023 LHE Circut Recap
+                - paragraph [ref=e143]: (00:37:14) 2024 LHE Preview and New Standards
+                - paragraph [ref=e144]: (00:47:22) Bug Bounty Motivation
+        - generic [ref=e146]:
+          - generic [ref=e148]:
+            - generic [ref=e150]: Join the Email List
+            - generic [ref=e151]:
+              - generic [ref=e152]:
+                - textbox "first name input box" [ref=e154]:
+                  - /placeholder: Enter your first name...
+                - textbox "email address input box" [ref=e156]:
+                  - /placeholder: Enter your email here...
+              - text: By signing up, you agree to receive email from this podcast.
+              - button "Subscribe" [ref=e158] [cursor=pointer]
+          - generic [ref=e159]:
+            - heading "Listen On" [level=3] [ref=e161]
+            - generic [ref=e162]:
+              - link "Apple Podcasts podcast player logo" [ref=e164] [cursor=pointer]:
+                - /url: https://podcasts.apple.com/us/podcast/id1663945029?mt=2&ls=1
+                - img "Apple Podcasts podcast player logo" [ref=e165]
+              - link "Spotify podcast player logo" [ref=e167] [cursor=pointer]:
+                - /url: https://open.spotify.com/show/4GiJnv8f4a4ZR6Jc6TQJ3k
+                - img "Spotify podcast player logo" [ref=e168]
+              - link "Castro podcast player logo" [ref=e170] [cursor=pointer]:
+                - /url: https://castro.fm/itunes/1663945029
+                - img "Castro podcast player logo" [ref=e171]
+              - link "RSS Feed podcast player logo" [ref=e173] [cursor=pointer]:
+                - /url: https://media.rss.com/ctbbpodcast/feed.xml
+                - img "RSS Feed podcast player logo" [ref=e174]
+              - link "YouTube podcast player logo" [ref=e176] [cursor=pointer]:
+                - /url: https://www.youtube.com/@criticalthinkingpodcast
+                - img "YouTube podcast player logo" [ref=e177]
+          - generic [ref=e179]:
+            - heading "Recent Episodes" [level=3] [ref=e181]
+            - list [ref=e182]:
+              - listitem [ref=e183]:
+                - 'link "Episode 162: HackerOne Training AI on Bug Bounty Data?" [ref=e184] [cursor=pointer]':
+                  - /url: /episode-162-hackerone-training-ai-on-bug-bounty-data/
+              - listitem [ref=e185]:
+                - 'link "Episode 161: Cross-Consumer Attacks & DTMF Tone Exfil" [ref=e186] [cursor=pointer]':
+                  - /url: /episode-161-cross-consumer-attacks-dtmf-tone-exfil/
+              - listitem [ref=e187]:
+                - 'link "Episode 160: Cloudflare Zero-days & Mail Unsubscribing for XSS" [ref=e188] [cursor=pointer]':
+                  - /url: /episode-160-cloudflare-zero-days-mail-unsubscribing-for-xss/
+              - listitem [ref=e189]:
+                - 'link "Episode 159: Avoiding Downgrades on Google Cloud VRP with Cote and Darby Hopkins" [ref=e190] [cursor=pointer]':
+                  - /url: /episode-159-avoiding-downgrades-on-google-cloud-vrp-with-cote-and-darby-hopkins/
+              - listitem [ref=e191]:
+                - 'link "Episode 159: Avoiding Downgrades on Google Cloud VRP with Cote and Darby Hopkins" [ref=e192] [cursor=pointer]':
+                  - /url: /episode-159-avoiding-downgrades-on-google-cloud-vrp-with-cote-and-darby-hopkins-1/
+              - listitem [ref=e193]:
+                - 'link "Episode 158: 10hr Marathon Hack-Along Recap + $300k Client-side Bugs" [ref=e194] [cursor=pointer]':
+                  - /url: /episode-158-10hr-marathon-hack-along-recap-300k-client-side-bugs/
+              - listitem [ref=e195]:
+                - 'link "Episode 158: 10hr Marathon Hack-Along Recap + $300k Client-side Bugs" [ref=e196] [cursor=pointer]':
+                  - /url: /episode-158-10hr-marathon-hack-along-recap-300k-client-side-bugs-1/
+              - listitem [ref=e197]:
+                - 'link "Episode 157: Crushing Pwn2Own & H1 with Kernel Driver Exploits" [ref=e198] [cursor=pointer]':
+                  - /url: /episode-157-crushing-pwn2own-h1-with-kernel-driver-exploits/
+              - listitem [ref=e199]:
+                - 'link "Episode 156: Chill AMA from bugbounty.forum" [ref=e200] [cursor=pointer]':
+                  - /url: /episode-156-chill-ama-from-bugbountyforum/
+              - listitem [ref=e201]:
+                - link "See all →" [ref=e202] [cursor=pointer]:
+                  - /url: /episodes/
+  - contentinfo [ref=e203]:
+    - generic [ref=e206]:
+      - generic [ref=e207]:
+        - link "Critical Thinking - Bug Bounty Podcast Logo":
+          - /url: https://www.criticalthinkingpodcast.io/
+          - img "Critical Thinking - Bug Bounty Podcast Logo"
+      - paragraph [ref=e209]: A "by Hackers for Hackers" podcast focused on technical content ranging from bug bounty tips, to write-up explanations, to the latest hacking techniques.
+      - list [ref=e211]:
+        - listitem [ref=e212]:
+          - link "Episodes" [ref=e213] [cursor=pointer]:
+            - /url: /episodes/
+        - listitem [ref=e214]:
+          - link "Videos" [ref=e215] [cursor=pointer]:
+            - /url: /videos/
+        - listitem [ref=e216]:
+          - link "About" [ref=e217] [cursor=pointer]:
+            - /url: /about/
+        - listitem [ref=e218]:
+          - link "Reviews" [ref=e219] [cursor=pointer]:
+            - /url: /reviews/
+        - listitem [ref=e220]:
+          - link "Contact" [ref=e221] [cursor=pointer]:
+            - /url: /contact/
+      - list [ref=e223]:
+        - listitem [ref=e224]:
+          - link "How to go Full-Time Bug Bounty" [ref=e225] [cursor=pointer]:
+            - /url: /how-to-go-full-time-bug-bounty/
+        - listitem [ref=e226]:
+          - link "Swag" [ref=e227] [cursor=pointer]:
+            - /url: https://ctbbpodcast.myshopify.com
+        - listitem [ref=e228]:
+          - link "Hacker Notes" [ref=e229] [cursor=pointer]:
+            - /url: https://blog.criticalthinkingpodcast.io/
+        - listitem [ref=e230]:
+          - link "Sponsors" [ref=e231] [cursor=pointer]:
+            - /url: /sponsors/
+        - listitem [ref=e232]:
+          - link "Lab" [ref=e233] [cursor=pointer]:
+            - /url: https://www.criticalthinkingpodcast.io/p/critical-research-lab/
+      - generic [ref=e234]:
+        - list
+      - list [ref=e237]:
+        - listitem [ref=e238]: © 2026 Critical Thinking - Bug Bounty Podcast
+        - listitem [ref=e239]:
+          - link "Podcast Website by Podpage" [ref=e240] [cursor=pointer]:
+            - /url: https://www.podpage.com?utm_source=podpage_podcast_website&utm_medium=referral&utm_campaign=podpage_footer&utm_content=critical-thinking-bug-bounty-podcast
